@@ -10,6 +10,8 @@ import {
   query,
   limitToLast,
   onValue,
+  update,
+  remove,
 } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-database.js";
 
 // 気分コード → 表示ラベル
@@ -64,4 +66,20 @@ export function watchRecentMoods(uid, callback) {
     list.reverse(); // DBからは古い順に届くので、新しい順に並べ替える
     callback(list);
   });
+}
+
+// ---------- Update：1件の気分を付け替える ----------
+// update は「指定した項目だけ」を書き換える（date / recordedAt はそのまま残る）
+export async function updateMood(uid, moodId, newMood) {
+  const oneMoodRef = ref(db, `moods/${uid}/${moodId}`); // 1件分の住所
+  await update(oneMoodRef, {
+    mood: newMood,
+    updatedAt: serverTimestamp(), // いつ変更したかを残す
+  });
+}
+
+// ---------- Delete：1件の気分を削除する ----------
+export async function deleteMood(uid, moodId) {
+  const oneMoodRef = ref(db, `moods/${uid}/${moodId}`);
+  await remove(oneMoodRef);
 }

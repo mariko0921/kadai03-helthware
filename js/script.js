@@ -7,7 +7,14 @@ import {
   signOut,
   onAuthStateChanged,
 } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js";
-import { MOODS, saveMood, watchRecentMoods, todayString } from "./mood.js";
+import {
+  MOODS,
+  saveMood,
+  watchRecentMoods,
+  todayString,
+  updateMood,
+  deleteMood,
+} from "./mood.js";
 
 // ログイン中のユーザーのuid（未ログインなら null）
 let currentUid = null;
@@ -136,10 +143,61 @@ function renderMoods(list) {
     const li = document.createElement("li");
     li.className = "history-item";
     li.dataset.id = item.id; // Step 5（更新・削除）で使う
+    // 変更済みなら目印を付ける
+    const editedMark = item.updatedAt ? `<span class="muted">（変更済み）</span>` : "";
+
+    // 付け替え用の小さな気分ボタン（最初は隠しておく）
+    const choices = Object.entries(MOODS)
+      .map(([code, info]) =>
+        `<button class="choice-btn" data-action="choose" data-mood="${code}" title="${info.label}">${info.emoji}</button>`)
+      .join("");
+
     li.innerHTML = `
-      <span class="history-time">${formatTime(item.recordedAt)}</span>
-      <span class="history-mood">${moodText(item.mood)}</span>
+      <div class="history-row">
+        <span class="history-time">${formatTime(item.recordedAt)}</span>
+        <span class="history-mood">${moodText(item.mood)}${editedMark}</span>
+        <span class="history-actions">
+          <button class="link-btn" data-action="edit">変更</button>
+          <button class="link-btn danger" data-action="delete">削除</button>
+        </span>
+      </div>
+      <div class="history-choices" hidden>${choices}</div>
     `;
     moodHistory.appendChild(li);
   }
 }
+
+// ---------- ⑥ 気分の変更・削除（Update / Delete） ----------
+// 履歴は何度も描き直されるので、各ボタンではなく親の <ul> で
+// クリックをまとめて受け取る（イベント委任）
+moodHistory.addEventListener("click", async (e) => {
+  const btn = e.target.closest("button[data-action]");
+  if (!btn || !currentUid) return;
+
+  const li = btn.closest(".history-item");
+  const moodId = li.dataset.id; // Step 4 で埋め込んだ pushキー
+  const action = btn.dataset.action;
+
+  try {
+    if (action === "edit") {
+      // 付け替えボタンの表示・非表示を切り替えるだけ（DBは触らない）
+      const choicesBox = li.querySelector(".history-choices");
+      choicesBox.hidden = !choicesBox.hidden;
+    }
+
+    if (action === "choose") {
+      // Update：選んだ気分に付け替える
+      await updateMood(currentUid, moodId, btn.dataset.mood);
+      // 画面の更新は onValue が自動でやってくれる
+    }
+
+    if (action === "delete") {
+      // Delete：消すと元に戻せないので確認する
+      if (!confirm("この記録を削除しますか？")) return;
+      await deleteMood(currentUid, moodId);
+    }
+  } catch (error) {
+    console.error("操作失敗:", error);
+    alert("操作できませんでした: " + error.message);
+  }
+});
