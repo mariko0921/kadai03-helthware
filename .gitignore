@@ -1,0 +1,24 @@
+# --- 秘密情報（絶対にGitHubに載せない） ---
+.env
+.env.*
+*.local.js
+secrets/
+*serviceAccount*.json
+*-firebase-adminsdk-*.json
+
+# --- 健康データのエクスポート（個人情報） ---
+exports/
+*.export.json
+export.xml
+
+# --- Firebase CLI の作業ファイル ---
+.firebase/
+firebase-debug.log
+database-debug.log
+
+# --- その他 ---
+node_modules/
+.DS_Store
+
+# --- Firebase設定（GitHubでは非公開。見本は firebase-config.example.js） ---
+js/firebase-config.js

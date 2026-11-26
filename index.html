@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OGARU</title>
+  <link rel="stylesheet" href="CSS/style.css">
+</head>
+<body>
+  <header class="header">
+    <h1 class="logo">OGARU</h1>
+  </header>
+
+  <main class="main">
+    <!-- 未ログイン時に表示 -->
+    <section id="login-view" class="card" hidden>
+      <p>心と体の変化を、そっと記録する。</p>
+      <button id="login-btn" class="btn">Googleでログイン</button>
+    </section>
+
+    <!-- ログイン中に表示 -->
+    <section id="app-view" hidden>
+      <div class="card">
+        <p>ようこそ、<span id="user-name"></span> さん</p>
+        <p class="muted">uid: <span id="user-uid"></span></p>
+        <button id="logout-btn" class="btn btn-sub">ログアウト</button>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">いまの気分は？</h2>
+        <p class="muted">記録は任意です。ワンタップで残せます。</p>
+        <div id="mood-buttons" class="mood-buttons"></div>
+        <p id="mood-message" class="muted"></p>
+      </div>
+    </section>
+  </main>
+
+  <!-- type="module" にすると import / export が使える -->
+  <script type="module" src="js/script.js"></script>
+</body>
+</html>
