@@ -7,6 +7,9 @@ import {
   ref,
   push,
   serverTimestamp,
+  query,
+  limitToLast,
+  onValue,
 } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-database.js";
 
 // 気分コード → 表示ラベル
@@ -40,5 +43,25 @@ export async function saveMood(uid, mood) {
     mood: mood,                   // "relaxed" などのコード
     date: todayString(),          // 日付での検索・グラフ用
     recordedAt: serverTimestamp(), // 記録時刻（端末ではなくFirebaseサーバーの時計）
+  });
+}
+
+// ---------- Read：直近の気分を「監視」する ----------
+// データが変わるたびに callback(気分の配列) が呼ばれる
+// 戻り値は「監視をやめる関数」。ログアウト時に呼ぶ
+export function watchRecentMoods(uid, callback) {
+  // ① 場所 + 条件（最新20件だけ）を組み合わせた「問い合わせ」を作る
+  const recentQuery = query(ref(db, `moods/${uid}`), limitToLast(20));
+
+  // ② 監視を開始。初回と、以降データが変わるたびに実行される
+  return onValue(recentQuery, (snapshot) => {
+    // snapshot = その瞬間のデータのかたまり
+    const list = [];
+    snapshot.forEach((child) => {
+      // child.key = "-Oxxxx"（pushのキー）, child.val() = { mood, date, recordedAt }
+      list.push({ id: child.key, ...child.val() });
+    });
+    list.reverse(); // DBからは古い順に届くので、新しい順に並べ替える
+    callback(list);
   });
 }

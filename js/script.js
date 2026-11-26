@@ -7,10 +7,13 @@ import {
   signOut,
   onAuthStateChanged,
 } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js";
-import { MOODS, saveMood } from "./mood.js";
+import { MOODS, saveMood, watchRecentMoods, todayString } from "./mood.js";
 
 // ログイン中のユーザーのuid（未ログインなら null）
 let currentUid = null;
+
+// 気分の監視をやめるための関数（watchRecentMoods の戻り値を入れておく）
+let stopWatchingMoods = null;
 
 // ---------- 画面の要素を取得 ----------
 const loginView = document.querySelector("#login-view");
@@ -47,7 +50,16 @@ onAuthStateChanged(auth, (user) => {
     userUid.textContent = user.uid; // ← このuidがDBの保存場所の鍵になる
     loginView.hidden = true;
     appView.hidden = false;
+
+    // ログインしたら、自分の気分データの監視を開始
+    stopWatchingMoods = watchRecentMoods(user.uid, renderMoods);
   } else {
+    // ログアウトしたら監視をやめる
+    // （やめないと、権限がないのに読もうとしてエラーになる）
+    if (stopWatchingMoods) {
+      stopWatchingMoods();
+      stopWatchingMoods = null;
+    }
     loginView.hidden = false;
     appView.hidden = true;
   }
@@ -81,3 +93,53 @@ moodButtons.addEventListener("click", async (e) => {
     moodMessage.textContent = "記録できませんでした: " + error.message;
   }
 });
+
+// ---------- ⑤ 気分の表示（Read） ----------
+const todayMood = document.querySelector("#today-mood");
+const moodHistory = document.querySelector("#mood-history");
+
+// タイムスタンプ（ミリ秒）→ "11/26 14:32"
+function formatTime(ms) {
+  if (!ms) return "--:--";
+  const d = new Date(ms);
+  return d.toLocaleString("ja-JP", {
+    month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit",
+  });
+}
+
+// 気分コード → "🍃 リラックス"（想定外のコードでも落ちないように）
+function moodText(code) {
+  const info = MOODS[code];
+  return info ? `${info.emoji} ${info.label}` : "不明な記録";
+}
+
+// watchRecentMoods から、データが変わるたびに呼ばれる
+function renderMoods(list) {
+  // --- 今日の気分：今日の日付の記録のうち、いちばん新しいもの ---
+  const today = todayString();
+  const latestToday = list.find((item) => item.date === today);
+
+  if (latestToday) {
+    todayMood.textContent = `${moodText(latestToday.mood)}（${formatTime(latestToday.recordedAt)}）`;
+  } else {
+    // 記録は任意なので、責めない表現にする
+    todayMood.textContent = "まだ記録はありません";
+  }
+
+  // --- 履歴：新しい順に一覧表示 ---
+  moodHistory.innerHTML = "";
+  if (list.length === 0) {
+    moodHistory.innerHTML = `<li class="muted">記録がまだありません</li>`;
+    return;
+  }
+  for (const item of list) {
+    const li = document.createElement("li");
+    li.className = "history-item";
+    li.dataset.id = item.id; // Step 5（更新・削除）で使う
+    li.innerHTML = `
+      <span class="history-time">${formatTime(item.recordedAt)}</span>
+      <span class="history-mood">${moodText(item.mood)}</span>
+    `;
+    moodHistory.appendChild(li);
+  }
+}
