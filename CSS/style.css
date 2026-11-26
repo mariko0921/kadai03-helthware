@@ -102,3 +102,104 @@ body {
   cursor: pointer;
 }
 .choice-btn:hover { background: #eef2ec; }
+
+.oura-output {
+  margin: 12px 0 0;
+  max-height: 320px;
+  overflow: auto;
+  font-size: 0.75rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+  background: #fafaf7;
+  border-radius: 8px;
+  padding: 8px;
+}
+.oura-output:empty { display: none; }
+
+/* ---------- 今日のコンディション ---------- */
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+.demo-badge {
+  background: #f3e3c3;
+  color: #8a5a12;
+  font-size: 0.75rem;
+  font-weight: bold;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.source-switch {
+  display: inline-flex;
+  background: #eef0ec;
+  border-radius: 999px;
+  padding: 3px;
+  margin: 12px 0 16px;
+}
+.source-switch button {
+  border: none;
+  background: none;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+.source-switch button.is-active { background: #fff; color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+.score-ring {
+  width: 140px;
+  height: 140px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  border: 8px solid var(--accent);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.score-ring.is-missing { border-color: #dfe3dd; }
+.score-value { font-size: 2.4rem; font-weight: bold; }
+.score-ring.is-missing .score-value { font-size: 1.1rem; color: var(--muted); }
+.score-label { font-size: 0.75rem; color: var(--muted); }
+
+.metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.metric { background: #fafaf7; border-radius: 10px; padding: 10px; }
+.metric-label { font-size: 0.7rem; color: var(--muted); }
+.metric-value { font-size: 1rem; font-weight: bold; margin-top: 2px; }
+.metric.is-missing .metric-value { color: #b3bab4; font-weight: normal; font-size: 0.85rem; }
+
+.source-line { margin-top: 12px; }
+
+@media (max-width: 480px) {
+  .metric-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ---------- 7日間グラフ ---------- */
+.chart-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+.chart-tabs button {
+  border: 1px solid #e4e8e3;
+  background: #fafaf7;
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 0.75rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+.chart-tabs button.is-active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+.chart-summary { display: flex; gap: 24px; margin-bottom: 8px; }
+.chart-summary div { display: flex; flex-direction: column; }
+.chart-summary strong { font-size: 1.2rem; }
+
+.chart-box { position: relative; height: 220px; }
+.chart-empty {
+  display: none;
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.chart-box.is-empty .chart-empty { display: flex; }

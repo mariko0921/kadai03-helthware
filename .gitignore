@@ -22,3 +22,4 @@ node_modules/
 
 # --- Firebase設定（GitHubでは非公開。見本は firebase-config.example.js） ---
 js/firebase-config.js
+js/oura-config.js

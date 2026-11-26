@@ -21,6 +21,28 @@
     <!-- ログイン中に表示 -->
     <section id="app-view" hidden>
       <div class="card">
+        <div class="card-head">
+          <h2 class="card-title">今日のコンディション</h2>
+          <span id="demo-badge" class="demo-badge" hidden>デモデータを表示中</span>
+        </div>
+        <div id="source-switch" class="source-switch">
+          <button data-source="oura">実データ（Oura）</button>
+          <button data-source="demo">デモ</button>
+        </div>
+        <div id="today-health"></div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">直近7日間の変化</h2>
+        <div id="chart-tabs" class="chart-tabs"></div>
+        <div id="chart-summary" class="chart-summary"></div>
+        <div class="chart-box">
+          <canvas id="week-chart"></canvas>
+          <p class="chart-empty">この期間のデータは未取得です</p>
+        </div>
+      </div>
+
+      <div class="card">
         <p>ようこそ、<span id="user-name"></span> さん</p>
         <p class="muted">uid: <span id="user-uid"></span></p>
         <button id="logout-btn" class="btn btn-sub">ログアウト</button>
@@ -42,9 +64,28 @@
         <h2 class="card-title">最近の記録</h2>
         <ul id="mood-history" class="history"></ul>
       </div>
+
+      <div class="card">
+        <h2 class="card-title">デモデータ</h2>
+        <p class="muted">実データとは別の場所に保存されます。表示中は「デモ」と明示します。</p>
+        <button id="demo-create-btn" class="btn">デモデータを作成（7日分）</button>
+        <button id="demo-delete-btn" class="btn btn-sub">デモデータを削除</button>
+        <p id="demo-message" class="muted"></p>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">Oura連携（検証中）</h2>
+        <p id="oura-status" class="muted"></p>
+        <button id="oura-connect-btn" class="btn">Ouraと連携</button>
+        <button id="oura-test-btn" class="btn" hidden>テスト取得（直近7日）</button>
+        <button id="oura-disconnect-btn" class="btn btn-sub" hidden>連携解除</button>
+        <pre id="oura-output" class="oura-output"></pre>
+      </div>
     </section>
   </main>
 
+  <!-- グラフ描画ライブラリ（window.Chart として使える） -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <!-- type="module" にすると import / export が使える -->
   <script type="module" src="js/script.js"></script>
 </body>

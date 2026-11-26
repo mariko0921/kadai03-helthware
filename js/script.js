@@ -15,12 +15,30 @@ import {
   updateMood,
   deleteMood,
 } from "./mood.js";
+import {
+  startOuraLogin,
+  handleOuraRedirect,
+  getOuraToken,
+  disconnectOura,
+  fetchOura,
+} from "./oura.js";
+import { createDemoData, deleteDemoData, watchRecentHealth } from "./health.js";
+import {
+  renderToday,
+  CHART_METRICS,
+  buildWeekSeries,
+  renderWeekChart,
+} from "./dashboard.js";
+import { METRICS } from "./health.js";
 
 // ログイン中のユーザーのuid（未ログインなら null）
 let currentUid = null;
 
 // 気分の監視をやめるための関数（watchRecentMoods の戻り値を入れておく）
 let stopWatchingMoods = null;
+
+// 健康データの監視をやめるための関数
+let stopWatchingHealth = null;
 
 // ---------- 画面の要素を取得 ----------
 const loginView = document.querySelector("#login-view");
@@ -60,12 +78,18 @@ onAuthStateChanged(auth, (user) => {
 
     // ログインしたら、自分の気分データの監視を開始
     stopWatchingMoods = watchRecentMoods(user.uid, renderMoods);
+    // 直近7日分の健康データの監視も開始
+    stopWatchingHealth = watchRecentHealth(user.uid, 7, onHealthChanged);
   } else {
     // ログアウトしたら監視をやめる
     // （やめないと、権限がないのに読もうとしてエラーになる）
     if (stopWatchingMoods) {
       stopWatchingMoods();
       stopWatchingMoods = null;
+    }
+    if (stopWatchingHealth) {
+      stopWatchingHealth();
+      stopWatchingHealth = null;
     }
     loginView.hidden = false;
     appView.hidden = true;
@@ -201,3 +225,152 @@ moodHistory.addEventListener("click", async (e) => {
     alert("操作できませんでした: " + error.message);
   }
 });
+
+// ---------- ⑦ Oura連携の検証（Step 6） ----------
+const ouraStatus = document.querySelector("#oura-status");
+const ouraConnectBtn = document.querySelector("#oura-connect-btn");
+const ouraTestBtn = document.querySelector("#oura-test-btn");
+const ouraDisconnectBtn = document.querySelector("#oura-disconnect-btn");
+const ouraOutput = document.querySelector("#oura-output");
+
+// ページを開いた瞬間に「Ouraから戻ってきたところか？」を確認
+const redirectResult = handleOuraRedirect();
+
+function renderOuraStatus() {
+  const token = getOuraToken();
+  if (token) {
+    const until = new Date(token.expiresAt).toLocaleDateString("ja-JP");
+    ouraStatus.textContent = `✅ 連携中（${until} まで有効）`;
+  } else {
+    ouraStatus.textContent = redirectResult === "error" ? "⚠️ 連携に失敗しました" : "未連携";
+  }
+  ouraConnectBtn.hidden = !!token;
+  ouraTestBtn.hidden = !token;
+  ouraDisconnectBtn.hidden = !token;
+}
+renderOuraStatus();
+
+ouraConnectBtn.addEventListener("click", () => startOuraLogin());
+
+ouraDisconnectBtn.addEventListener("click", () => {
+  disconnectOura();
+  ouraOutput.textContent = "";
+  renderOuraStatus();
+});
+
+// 直近7日分のコンディション（Readiness）を取得してそのまま表示
+ouraTestBtn.addEventListener("click", async () => {
+  const end = new Date();
+  const start = new Date();
+  start.setDate(end.getDate() - 6);
+
+  ouraOutput.textContent = "取得中…";
+  try {
+    const json = await fetchOura("daily_readiness", todayString(start), todayString(end));
+    ouraOutput.textContent = `✅ 取得成功（${json.data.length}件）\n\n` + JSON.stringify(json, null, 2);
+  } catch (error) {
+    // CORSで拒否されると、中身の分からない TypeError: Failed to fetch になる
+    console.error(error);
+    ouraOutput.textContent = `❌ ${error.name}: ${error.message}`;
+  }
+});
+
+// ---------- ⑧ デモデータの作成・削除（Step 7） ----------
+const demoCreateBtn = document.querySelector("#demo-create-btn");
+const demoDeleteBtn = document.querySelector("#demo-delete-btn");
+const demoMessage = document.querySelector("#demo-message");
+
+demoCreateBtn.addEventListener("click", async () => {
+  if (!currentUid) return;
+  try {
+    await createDemoData(currentUid, 7);
+    demoMessage.textContent = "デモデータを7日分作成しました";
+  } catch (error) {
+    console.error(error);
+    demoMessage.textContent = "作成できませんでした: " + error.message;
+  }
+});
+
+demoDeleteBtn.addEventListener("click", async () => {
+  if (!currentUid) return;
+  if (!confirm("デモデータをすべて削除しますか？（実データは消えません）")) return;
+  try {
+    const count = await deleteDemoData(currentUid);
+    demoMessage.textContent = `デモデータを${count}日分削除しました`;
+  } catch (error) {
+    console.error(error);
+    demoMessage.textContent = "削除できませんでした: " + error.message;
+  }
+});
+
+// ---------- ⑨ 今日のコンディション表示（Step 8） ----------
+const todayHealth = document.querySelector("#today-health");
+const sourceSwitch = document.querySelector("#source-switch");
+const demoBadge = document.querySelector("#demo-badge");
+
+// 表示する取得元（"oura" or "demo"）。リロードしても覚えておく
+let displaySource = localStorage.getItem("ogaru.displaySource") || "oura";
+
+// 最後に受け取った7日分のデータ（切り替え時に再描画するため保持）
+let recentHealth = {};
+
+// DBの健康データが変わるたびに呼ばれる
+function onHealthChanged(data) {
+  recentHealth = data;
+  renderHealth();
+}
+
+// 選んだ取得元のデータだけを取り出して描画する（混ぜない）
+function renderHealth() {
+  const today = todayString();
+  const todayData = recentHealth[today]?.[displaySource]; // 例: data["2026-11-26"]["demo"]
+  renderToday(todayHealth, todayData, displaySource);
+  renderChart(); // グラフも同じデータ・同じ取得元で描き直す
+
+  // デモ表示中は必ずバッジを出す
+  demoBadge.hidden = displaySource !== "demo";
+  sourceSwitch.querySelectorAll("button").forEach((btn) => {
+    btn.classList.toggle("is-active", btn.dataset.source === displaySource);
+  });
+}
+
+// 実データ / デモ の切り替え
+sourceSwitch.addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-source]");
+  if (!btn) return;
+  displaySource = btn.dataset.source;
+  localStorage.setItem("ogaru.displaySource", displaySource);
+  renderHealth(); // DBは読み直さず、手元のデータで描き直す
+});
+
+// ---------- ⑩ 直近7日間のグラフ（Step 9） ----------
+const chartTabs = document.querySelector("#chart-tabs");
+const chartCanvas = document.querySelector("#week-chart");
+const chartSummary = document.querySelector("#chart-summary");
+
+let chartMetric = "readinessScore"; // 最初に表示する指標
+
+// 指標の切り替えタブを METRICS から自動生成
+for (const key of CHART_METRICS) {
+  const btn = document.createElement("button");
+  btn.dataset.metric = key;
+  btn.textContent = METRICS[key].label;
+  chartTabs.appendChild(btn);
+}
+
+chartTabs.addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-metric]");
+  if (!btn) return;
+  chartMetric = btn.dataset.metric;
+  renderChart();
+});
+
+function renderChart() {
+  // 🧠 ここがデータ処理の本体：手元の7日分 → 選んだ取得元・指標だけの配列
+  const series = buildWeekSeries(recentHealth, displaySource, chartMetric);
+  renderWeekChart(chartCanvas, chartSummary, series, chartMetric);
+
+  chartTabs.querySelectorAll("button").forEach((btn) => {
+    btn.classList.toggle("is-active", btn.dataset.metric === chartMetric);
+  });
+}
