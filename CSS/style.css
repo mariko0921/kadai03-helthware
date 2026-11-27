@@ -21,7 +21,7 @@
 
   --font-body: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Hiragino Sans", sans-serif;
   --font-head: "Shippori Mincho", "Hiragino Mincho ProN", serif;
-  --font-logo: "Cinzel", "Times New Roman", serif;
+  --font-logo: "Cormorant Garamond", "Times New Roman", serif;
 
   /* おがくずの粒子（SVGのノイズを背景に敷く） */
   --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.45 0 0 0 0 0.32 0 0 0 0 0.18 0 0 0 0.09 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
@@ -82,7 +82,7 @@ code {
     0 -1px 0 rgba(40, 24, 10, 0.55),
     0 1px 0 rgba(255, 238, 205, 0.7);
 }
-.logo { font-size: 1.35rem; }
+.logo { font-size: 1.9rem; line-height: 1; letter-spacing: 0.28em; }
 .header-user { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; }
 .header-name { color: var(--wood-dark); }
 .header .link-btn { color: var(--wood-dark); font-weight: 500; }
@@ -388,11 +388,11 @@ code {
     inset 0 -2px 4px rgba(90, 58, 28, 0.2),
     0 10px 24px rgba(90, 58, 28, 0.18);
 }
-.plaque-logo { font-size: 2.6rem; letter-spacing: 0.4em; }
+.plaque-logo { font-size: 3.6rem; letter-spacing: 0.3em; line-height: 1; }
 
 @media (max-width: 480px) {
   .plaque { padding: 16px 24px 16px 34px; }
-  .plaque-logo { font-size: 1.9rem; }
+  .plaque-logo { font-size: 2.5rem; }
 }
 
 /* =====================================================
@@ -420,9 +420,10 @@ code {
   stroke: #4d5a33;
   stroke-linecap: round;
   opacity: 0.13;
-  filter: blur(5px); /* 地面に落ちた影のようにぼかす */
+  filter: blur(4px); /* 地面に落ちた影のようにぼかす（葉先の尖りが少し分かる程度） */
 }
-.komorebi-leaves path { fill: none; }
+.komorebi-leaves path { stroke: none; }
+.komorebi-leaves .twig { fill: none; stroke: #4d5a33; }
 
 .sway { transform-box: view-box; }
 .sway-a { transform-origin: 0 0;       animation: sway-a 14s ease-in-out infinite alternate; }
