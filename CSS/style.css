@@ -481,3 +481,51 @@ code {
 }
 .body-date input { width: auto; }
 .body-form input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* ---------- 1か月カレンダー ---------- */
+.cal-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cal-head .card-title { margin: 0; }
+.cal-summary { margin: 12px 0; }
+
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.cal-week { text-align: center; font-size: 0.7rem; color: var(--muted); padding-bottom: 4px; }
+.cal-week.is-sun { color: var(--danger); }
+.cal-week.is-sat { color: #4f6f8a; }
+
+.cal-cell {
+  --tint: 0;
+  position: relative;
+  aspect-ratio: 1 / 1.05;
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.7rem;
+}
+/* スコアがある日は苔色を重ねる（--tint が大きいほど濃い） */
+.cal-cell.has-score {
+  background:
+    linear-gradient(rgba(102, 120, 74, var(--tint)), rgba(102, 120, 74, var(--tint))),
+    var(--surface);
+}
+.cal-cell.is-blank { background: none; }
+.cal-cell.is-future { opacity: 0.45; }
+.cal-cell.is-today { outline: 2px solid var(--wood); outline-offset: -2px; }
+
+.cal-day { align-self: flex-start; color: var(--muted); line-height: 1; }
+.cal-mood { font-size: 1.2rem; line-height: 1; min-height: 1.2rem; }
+.cal-score { font-weight: 600; color: var(--text); line-height: 1; min-height: 0.8rem; }
+.cal-legend { margin-top: 12px; font-size: 0.7rem; }
+
+@media (max-width: 480px) {
+  .calendar { gap: 3px; }
+  .cal-mood { font-size: 1rem; }
+  .cal-cell { padding: 3px; border-radius: 8px; }
+}

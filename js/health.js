@@ -11,6 +11,7 @@ import {
   query,
   orderByKey,
   startAt,
+  endAt,
   onValue,
 } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-database.js";
 import { todayString } from "./mood.js";
@@ -87,4 +88,16 @@ export function watchConnection(uid, source, callback) {
   return onValue(ref(db, `connections/${uid}/${source}`), (snapshot) => {
     callback(snapshot.val()); // まだ1度も同期していなければ null
   });
+}
+
+// ---------- Read：指定した期間（例：1か月）の健康データを監視する ----------
+// キーが日付なので、orderByKey + startAt / endAt で範囲を指定できる
+export function watchHealthInRange(uid, startDate, endDate, callback) {
+  const rangeQuery = query(
+    ref(db, `health/${uid}`),
+    orderByKey(),
+    startAt(startDate),
+    endAt(endDate)
+  );
+  return onValue(rangeQuery, (snapshot) => callback(snapshot.val() || {}));
 }

@@ -9,6 +9,9 @@ import {
   serverTimestamp,
   query,
   limitToLast,
+  orderByChild,
+  startAt,
+  endAt,
   onValue,
   update,
   remove,
@@ -82,4 +85,32 @@ export async function updateMood(uid, moodId, newMood) {
 export async function deleteMood(uid, moodId) {
   const oneMoodRef = ref(db, `moods/${uid}/${moodId}`);
   await remove(oneMoodRef);
+}
+
+// ---------- Read：指定した期間（例：1か月）の気分を監視する ----------
+// callback には { "2026-11-27": "relaxed", ... }（その日の「最後の」気分）が渡される
+export function watchMoodsInRange(uid, startDate, endDate, callback) {
+  // 🧠 キーは push のID なので、中の date 項目で並べ替えてから範囲を指定する
+  //    （ルールの ".indexOn": ["date"] が、この検索を速くする索引）
+  const rangeQuery = query(
+    ref(db, `moods/${uid}`),
+    orderByChild("date"),
+    startAt(startDate),
+    endAt(endDate)
+  );
+
+  return onValue(rangeQuery, (snapshot) => {
+    const latestByDate = {}; // { "2026-11-27": { mood, recordedAt } }
+    snapshot.forEach((child) => {
+      const m = child.val();
+      const current = latestByDate[m.date];
+      // 同じ日に複数あれば、記録時刻が遅い方を残す
+      if (!current || (m.recordedAt ?? 0) > (current.recordedAt ?? 0)) {
+        latestByDate[m.date] = m;
+      }
+    });
+    const result = {};
+    for (const [date, m] of Object.entries(latestByDate)) result[date] = m.mood;
+    callback(result);
+  });
 }

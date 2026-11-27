@@ -5,6 +5,7 @@
 import { METRICS } from "./health.js";
 import { todayString } from "./mood.js";
 import { BODY_METRICS, BODY_SOURCES } from "./body.js";
+import { MOODS } from "./mood.js";
 
 export const SOURCE_LABELS = {
   oura: "Oura（実データ）",
@@ -250,5 +251,61 @@ export function renderBody(container, list) {
     <p class="body-head">最終計測：<strong>${dateText}</strong> <span class="muted">${prevText}</span></p>
     <div class="metric-grid">${tiles}</div>
     <p class="muted source-line">取得元：${latest.sources.map((s) => BODY_SOURCES[s]).join("＋")}</p>
+  `;
+}
+
+// =====================================================
+// 1か月カレンダー
+// =====================================================
+// moods  = { "2026-11-27": "relaxed", ... }
+// health = { "2026-11-27": { oura: { readinessScore: 75, ... } }, ... }
+export function renderCalendar(container, summaryEl, year, month, moods, health) {
+  const first = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate(); // 翌月の0日 = 今月の末日
+  const today = todayString();
+
+  // 曜日の見出し
+  let html = ["日", "月", "火", "水", "木", "金", "土"]
+    .map((w, i) => `<div class="cal-week ${i === 0 ? "is-sun" : i === 6 ? "is-sat" : ""}">${w}</div>`)
+    .join("");
+
+  // 1日の曜日まで空白を入れる
+  for (let i = 0; i < first.getDay(); i++) html += `<div class="cal-cell is-blank"></div>`;
+
+  let recordedDays = 0;
+  const scores = [];
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = todayString(new Date(year, month, d));
+    const mood = moods[date];
+    const score = health[date]?.oura?.readinessScore;
+    const isFuture = date > today;
+
+    if (mood || score !== undefined) recordedDays++;
+    if (score !== undefined) scores.push(score);
+
+    // スコアが高いほど苔色を濃く（同じ色の濃淡＝量の表現）
+    const tint = score === undefined ? 0 : Math.max(0, Math.min(1, (score - 50) / 45));
+    const style = score === undefined ? "" : `style="--tint:${(tint * 0.45).toFixed(2)}"`;
+    const title = [
+      date,
+      mood ? `気分：${MOODS[mood]?.label ?? "-"}` : "気分：記録なし",
+      score !== undefined ? `コンディション：${score}` : "コンディション：未取得",
+    ].join("\n");
+
+    html += `
+      <div class="cal-cell ${date === today ? "is-today" : ""} ${isFuture ? "is-future" : ""} ${score !== undefined ? "has-score" : ""}"
+           ${style} title="${title}">
+        <span class="cal-day">${d}</span>
+        <span class="cal-mood">${mood ? MOODS[mood]?.emoji ?? "" : ""}</span>
+        <span class="cal-score">${score ?? ""}</span>
+      </div>`;
+  }
+  container.innerHTML = html;
+
+  const avg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+  summaryEl.innerHTML = `
+    <div><span class="muted">記録した日</span><strong>${recordedDays}日</strong></div>
+    <div><span class="muted">平均コンディション</span><strong>${avg ?? "未取得"}</strong></div>
   `;
 }

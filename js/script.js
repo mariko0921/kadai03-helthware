@@ -15,6 +15,7 @@ import {
   todayString,
   updateMood,
   deleteMood,
+  watchMoodsInRange,
 } from "./mood.js";
 import {
   startOuraLogin,
@@ -27,6 +28,7 @@ import {
   watchRecentHealth,
   saveOuraDays,
   watchConnection,
+  watchHealthInRange,
 } from "./health.js";
 import {
   BODY_METRICS,
@@ -40,6 +42,7 @@ import { convertHealthPlanetExport } from "./healthplanet.js";
 import {
   renderToday,
   renderBody,
+  renderCalendar,
   CHART_METRICS,
   buildWeekSeries,
   renderWeekChart,
@@ -113,6 +116,9 @@ onAuthStateChanged(auth, (user) => {
     stopWatchingBody = watchLatestBody(user.uid, (list) => renderBody(bodyLatest, list));
     // HealthPlanetの最終同期日時（Ouraと同じ関数を、取得元だけ変えて使い回す）
     stopWatchingHpConnection = watchConnection(user.uid, "healthplanet", (conn) => renderSyncInfo(hpSync, conn));
+    // カレンダー：今月から表示
+    const now = new Date();
+    showCalendarMonth(now.getFullYear(), now.getMonth());
   } else {
     // ログアウトしたら監視をやめる
     // （やめないと、権限がないのに読もうとしてエラーになる）
@@ -136,6 +142,7 @@ onAuthStateChanged(auth, (user) => {
       stopWatchingHpConnection();
       stopWatchingHpConnection = null;
     }
+    stopCalendarWatchers();
     // センシティブな体組成は、ログアウト時に画面からも消してコンディション表示に戻す
     bodyLatest.innerHTML = "";
     showView("condition");
@@ -634,3 +641,56 @@ hpImportInput.addEventListener("change", async () => {
     hpImportInput.value = "";
   }
 });
+
+// ---------- ⑯ 1か月カレンダー ----------
+const calTitle = document.querySelector("#cal-title");
+const calendarEl = document.querySelector("#calendar");
+const calSummary = document.querySelector("#cal-summary");
+
+let calYear = null;
+let calMonth = null; // 0 = 1月
+let calMoods = {};
+let calHealth = {};
+let stopCalMoods = null;
+let stopCalHealth = null;
+
+// 月の監視をやめる（月を移動したとき・ログアウトしたとき）
+function stopCalendarWatchers() {
+  if (stopCalMoods) { stopCalMoods(); stopCalMoods = null; }
+  if (stopCalHealth) { stopCalHealth(); stopCalHealth = null; }
+}
+
+// 指定した月を表示：前の月の監視を止めてから、新しい月の監視を始める
+function showCalendarMonth(year, month) {
+  stopCalendarWatchers();
+
+  // Date は「13月」→翌年1月 のように自動で繰り上げてくれる
+  const first = new Date(year, month, 1);
+  calYear = first.getFullYear();
+  calMonth = first.getMonth();
+  calTitle.textContent = `${calYear}年${calMonth + 1}月`;
+
+  const startDate = todayString(first);                           // "2026-11-01"
+  const endDate = todayString(new Date(calYear, calMonth + 1, 0)); // "2026-11-30"
+
+  calMoods = {};
+  calHealth = {};
+  renderCurrentCalendar();
+
+  // 🧠 2種類の範囲検索で、その月の分だけを取得・監視
+  stopCalMoods = watchMoodsInRange(currentUid, startDate, endDate, (moods) => {
+    calMoods = moods;
+    renderCurrentCalendar();
+  });
+  stopCalHealth = watchHealthInRange(currentUid, startDate, endDate, (health) => {
+    calHealth = health;
+    renderCurrentCalendar();
+  });
+}
+
+function renderCurrentCalendar() {
+  renderCalendar(calendarEl, calSummary, calYear, calMonth, calMoods, calHealth);
+}
+
+document.querySelector("#cal-prev").addEventListener("click", () => showCalendarMonth(calYear, calMonth - 1));
+document.querySelector("#cal-next").addEventListener("click", () => showCalendarMonth(calYear, calMonth + 1));
