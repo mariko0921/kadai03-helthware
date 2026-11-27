@@ -10,7 +10,7 @@
       "exports/**",
       "**/*.example.js",
       "**/*.example.json",
-      "README.md"
+      "**/*.md"
     ],
     "headers": [
       {

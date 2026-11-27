@@ -27,3 +27,6 @@ js/oura-config.js
 # --- HealthPlanet の Client Secret（絶対にGitHubに載せない） ---
 scripts/healthplanet-config.json
 scripts/.healthplanet-token.json
+
+# --- README の下書き（手元のみ。GitHubには上げない） ---
+*.draft.md
