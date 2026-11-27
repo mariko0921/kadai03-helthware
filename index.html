@@ -74,10 +74,14 @@
       </div>
 
       <div class="card">
-        <h2 class="card-title">Oura連携（検証中）</h2>
+        <h2 class="card-title">Oura連携</h2>
         <p id="oura-status" class="muted"></p>
         <button id="oura-connect-btn" class="btn">Ouraと連携</button>
-        <button id="oura-test-btn" class="btn" hidden>テスト取得（直近7日）</button>
+        <button id="oura-copy-btn" class="btn" hidden>トークンをコピー</button>
+        <label id="oura-import-label" class="btn btn-file" hidden>
+          Ouraデータを読み込む
+          <input id="oura-import-input" type="file" accept=".json,application/json" hidden>
+        </label>
         <button id="oura-disconnect-btn" class="btn btn-sub" hidden>連携解除</button>
         <pre id="oura-output" class="oura-output"></pre>
       </div>

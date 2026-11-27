@@ -109,3 +109,31 @@ export function watchRecentHealth(uid, days, callback) {
     callback(snapshot.val() || {});
   });
 }
+
+// ---------- Create / Update：Ouraの実データを保存 ----------
+// days = convertOuraExport() の結果 { "2026-11-27": {...}, ... }
+// exportedAt = Ouraからデータを取得した時刻（ミリ秒）
+export async function saveOuraDays(uid, days, exportedAt) {
+  const dates = Object.keys(days).sort();
+  const updates = {};
+
+  for (const date of dates) {
+    // 日付ごとに oura の中身を丸ごと置き換える
+    // → 同じ日を何度読み込んでも重複せず、最新の内容になる
+    updates[`health/${uid}/${date}/oura`] = { ...days[date], fetchedAt: exportedAt };
+  }
+
+  // 同期の記録も同じ書き込みに含める（健康データと必ずセットで保存される）
+  updates[`connections/${uid}/oura`] = {
+    lastSyncAt: serverTimestamp(), // アプリに取り込んだ時刻
+    dataFetchedAt: exportedAt,     // Ouraから取得した時刻
+    method: "json-import",         // 将来 Cloud Functions にしたら "auto" などに
+    rangeStart: dates[0] ?? null,
+    rangeEnd: dates[dates.length - 1] ?? null,
+    dayCount: dates.length,
+  };
+
+  // ルート(ref(db))に対して update すると、複数のトップレベルに一括で書ける
+  await update(ref(db), updates);
+  return dates.length;
+}

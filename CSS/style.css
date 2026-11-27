@@ -166,7 +166,8 @@ body {
 .metric { background: #fafaf7; border-radius: 10px; padding: 10px; }
 .metric-label { font-size: 0.7rem; color: var(--muted); }
 .metric-value { font-size: 1rem; font-weight: bold; margin-top: 2px; }
-.metric.is-missing .metric-value { color: #b3bab4; font-weight: normal; font-size: 0.85rem; }
+.metric.is-missing .metric-value { color: var(--muted); font-weight: normal; font-size: 0.85rem; }
+.metric.is-missing { background: repeating-linear-gradient(135deg, #fafaf7 0 6px, #f2f3ef 6px 12px); }
 
 .source-line { margin-top: 12px; }
 
@@ -203,3 +204,5 @@ body {
   font-size: 0.9rem;
 }
 .chart-box.is-empty .chart-empty { display: flex; }
+
+.btn-file { display: inline-block; }

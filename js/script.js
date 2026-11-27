@@ -20,9 +20,14 @@ import {
   handleOuraRedirect,
   getOuraToken,
   disconnectOura,
-  fetchOura,
+  convertOuraExport,
 } from "./oura.js";
-import { createDemoData, deleteDemoData, watchRecentHealth } from "./health.js";
+import {
+  createDemoData,
+  deleteDemoData,
+  watchRecentHealth,
+  saveOuraDays,
+} from "./health.js";
 import {
   renderToday,
   CHART_METRICS,
@@ -226,12 +231,16 @@ moodHistory.addEventListener("click", async (e) => {
   }
 });
 
-// ---------- ⑦ Oura連携の検証（Step 6） ----------
+// ---------- ⑦ Oura連携（Step 6 → Step 10 で更新） ----------
+// Oura API はブラウザから直接呼べない（CORS）ため、
+// ブラウザでは「トークンの取得」だけを行い、データ取得はターミナルのスクリプトで行う
 const ouraStatus = document.querySelector("#oura-status");
 const ouraConnectBtn = document.querySelector("#oura-connect-btn");
-const ouraTestBtn = document.querySelector("#oura-test-btn");
+const ouraCopyBtn = document.querySelector("#oura-copy-btn");
 const ouraDisconnectBtn = document.querySelector("#oura-disconnect-btn");
 const ouraOutput = document.querySelector("#oura-output");
+const ouraImportLabel = document.querySelector("#oura-import-label");
+const ouraImportInput = document.querySelector("#oura-import-input");
 
 // ページを開いた瞬間に「Ouraから戻ってきたところか？」を確認
 const redirectResult = handleOuraRedirect();
@@ -245,7 +254,8 @@ function renderOuraStatus() {
     ouraStatus.textContent = redirectResult === "error" ? "⚠️ 連携に失敗しました" : "未連携";
   }
   ouraConnectBtn.hidden = !!token;
-  ouraTestBtn.hidden = !token;
+  ouraCopyBtn.hidden = !token;
+  ouraImportLabel.hidden = !token;
   ouraDisconnectBtn.hidden = !token;
 }
 renderOuraStatus();
@@ -258,21 +268,14 @@ ouraDisconnectBtn.addEventListener("click", () => {
   renderOuraStatus();
 });
 
-// 直近7日分のコンディション（Readiness）を取得してそのまま表示
-ouraTestBtn.addEventListener("click", async () => {
-  const end = new Date();
-  const start = new Date();
-  start.setDate(end.getDate() - 6);
-
-  ouraOutput.textContent = "取得中…";
-  try {
-    const json = await fetchOura("daily_readiness", todayString(start), todayString(end));
-    ouraOutput.textContent = `✅ 取得成功（${json.data.length}件）\n\n` + JSON.stringify(json, null, 2);
-  } catch (error) {
-    // CORSで拒否されると、中身の分からない TypeError: Failed to fetch になる
-    console.error(error);
-    ouraOutput.textContent = `❌ ${error.name}: ${error.message}`;
-  }
+// 取得スクリプト（scripts/fetch_oura.py）に貼り付けるためのトークンをコピー
+// ※画面には表示しない（肩越しに見られたり、スクショに写ったりしないように）
+ouraCopyBtn.addEventListener("click", async () => {
+  const token = getOuraToken();
+  if (!token) return;
+  await navigator.clipboard.writeText(token.accessToken);
+  ouraOutput.textContent =
+    "📋 コピーしました。ターミナルで python3 scripts/fetch_oura.py を実行し、貼り付けてください。";
 });
 
 // ---------- ⑧ デモデータの作成・削除（Step 7） ----------
@@ -374,3 +377,36 @@ function renderChart() {
     btn.classList.toggle("is-active", btn.dataset.metric === chartMetric);
   });
 }
+
+// ---------- ⑪ Ouraデータの読み込み・保存（Step 10） ----------
+ouraImportInput.addEventListener("change", async () => {
+  const file = ouraImportInput.files[0];
+  if (!file || !currentUid) return;
+
+  try {
+    // ① ファイルの中身を文字列として読む → JSONとして解釈
+    const json = JSON.parse(await file.text());
+
+    // ② 🧠 Ouraの形 → OGARUの共通の形 に変換
+    const days = convertOuraExport(json);
+    const count = Object.keys(days).length;
+    if (count === 0) throw new Error("保存できるデータがありませんでした");
+
+    if (!confirm(`${count}日分のOuraデータを保存しますか？（同じ日付は上書きされます）`)) return;
+
+    // ③ Firebaseに保存（健康データ + 最終同期日時を一括で）
+    await saveOuraDays(currentUid, days, Date.parse(json.exportedAt));
+    ouraOutput.textContent = `✅ ${count}日分のOuraデータを保存しました`;
+
+    // ④ 表示を実データに切り替える（画面はonValueで自動更新される）
+    displaySource = "oura";
+    localStorage.setItem("ogaru.displaySource", displaySource);
+    renderHealth();
+  } catch (error) {
+    console.error(error);
+    ouraOutput.textContent = "❌ 読み込めませんでした: " + error.message;
+  } finally {
+    // 同じファイルをもう一度選んでも change が起きるように空にする
+    ouraImportInput.value = "";
+  }
+});
