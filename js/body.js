@@ -15,6 +15,7 @@ import {
   query,
   orderByKey,
   limitToLast,
+  startAt,
   onValue,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-database.js";
@@ -77,7 +78,7 @@ export function watchLatestBody(uid, callback) {
 // 🧠 1日分の { manual: {...}, healthplanet: {...} } を「項目ごと」に合成する
 // 優先順位は BODY_SOURCES の並び順（先に書いたものが優先）
 // ※DBの中身は別々のまま。表示するときだけ合成するので、優先順位を後から変えても困らない
-function mergeSources(day) {
+export function mergeSources(day) {
   if (!day) return null;
   const merged = {};
   const sources = [];
@@ -119,4 +120,18 @@ export async function saveHealthPlanetDays(uid, days, exportedAt) {
 export async function getBody(uid, date) {
   const snapshot = await get(ref(db, `body/${uid}/${date}/manual`));
   return snapshot.val(); // 無ければ null
+}
+
+// ---------- Read：指定日以降の体組成を監視（グラフ用） ----------
+// callback には { "2026-11-05": { weight, bodyFat, ..., sources }, ... }（取得元を合成済み）が渡される
+export function watchBodyInRange(uid, startDate, callback) {
+  const rangeQuery = query(ref(db, `body/${uid}`), orderByKey(), startAt(startDate));
+  return onValue(rangeQuery, (snapshot) => {
+    const result = {};
+    snapshot.forEach((dateSnap) => {
+      const merged = mergeSources(dateSnap.val());
+      if (merged) result[dateSnap.key] = merged;
+    });
+    callback(result);
+  });
 }

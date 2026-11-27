@@ -37,15 +37,21 @@ import {
   watchLatestBody,
   getBody,
   saveHealthPlanetDays,
+  watchBodyInRange,
 } from "./body.js";
 import { convertHealthPlanetExport } from "./healthplanet.js";
+import { addBowel, deleteBowel, watchBowelInRange } from "./bowel.js";
 import {
   renderToday,
   renderBody,
   renderCalendar,
+  renderBodyCalendar,
   CHART_METRICS,
   buildWeekSeries,
-  renderWeekChart,
+  renderTrendChart,
+  conditionChartOptions,
+  buildBodySeries,
+  bodyChartOptions,
 } from "./dashboard.js";
 import { METRICS } from "./health.js";
 
@@ -370,31 +376,88 @@ const chartTabs = document.querySelector("#chart-tabs");
 const chartCanvas = document.querySelector("#week-chart");
 const chartSummary = document.querySelector("#chart-summary");
 
-let chartMetric = "readinessScore"; // 最初に表示する指標
+const chartTitle = document.querySelector("#chart-title");
 
-// 指標の切り替えタブを METRICS から自動生成
-for (const key of CHART_METRICS) {
-  const btn = document.createElement("button");
-  btn.dataset.metric = key;
-  btn.textContent = METRICS[key].label;
-  chartTabs.appendChild(btn);
+// グラフのモード（上の「コンディション / 体組成」の切り替えに連動）
+const BODY_CHART_DAYS = 90;
+let chartMode = "condition";
+let chartMetric = "readinessScore";     // コンディションで選んでいる指標
+let bodyChartMetric = "weight";         // 体組成で選んでいる指標
+let bodyRange = {};                     // 体組成の直近90日分（体組成タブを開いている間だけ持つ）
+let stopWatchingBodyRange = null;
+let stopWatchingBowelToday = null;
+
+// 指標の切り替えタブを、モードに合わせて作り直す
+function buildChartTabs() {
+  chartTabs.innerHTML = "";
+  const entries = chartMode === "body"
+    ? Object.entries(BODY_METRICS).map(([key, m]) => [key, m.label])
+    : CHART_METRICS.map((key) => [key, METRICS[key].label]);
+  for (const [key, label] of entries) {
+    const btn = document.createElement("button");
+    btn.dataset.metric = key;
+    btn.textContent = label;
+    chartTabs.appendChild(btn);
+  }
 }
+buildChartTabs();
 
 chartTabs.addEventListener("click", (e) => {
   const btn = e.target.closest("button[data-metric]");
   if (!btn) return;
-  chartMetric = btn.dataset.metric;
+  if (chartMode === "body") bodyChartMetric = btn.dataset.metric;
+  else chartMetric = btn.dataset.metric;
   renderChart();
 });
 
 function renderChart() {
-  // 🧠 ここがデータ処理の本体：手元の7日分 → 選んだ取得元・指標だけの配列
-  const series = buildWeekSeries(recentHealth, displaySource, chartMetric);
-  renderWeekChart(chartCanvas, chartSummary, series, chartMetric);
-
+  let selected;
+  if (chartMode === "body") {
+    // 🧠 体組成：直近90日分 → 選んだ指標だけの配列（取得元は合成済み）
+    selected = bodyChartMetric;
+    const series = buildBodySeries(bodyRange, selected, BODY_CHART_DAYS);
+    renderTrendChart(chartCanvas, chartSummary, series, bodyChartOptions(selected, BODY_CHART_DAYS));
+  } else {
+    // 🧠 コンディション：手元の7日分 → 選んだ取得元・指標だけの配列
+    selected = chartMetric;
+    const series = buildWeekSeries(recentHealth, displaySource, selected);
+    renderTrendChart(chartCanvas, chartSummary, series, conditionChartOptions(selected));
+  }
   chartTabs.querySelectorAll("button").forEach((btn) => {
-    btn.classList.toggle("is-active", btn.dataset.metric === chartMetric);
+    btn.classList.toggle("is-active", btn.dataset.metric === selected);
   });
+}
+
+// グラフのモードを切り替える（体組成は、開いている間だけ監視する）
+function setChartMode(mode) {
+  if (stopWatchingBodyRange) {
+    stopWatchingBodyRange();
+    stopWatchingBodyRange = null;
+  }
+  if (stopWatchingBowelToday) {
+    stopWatchingBowelToday();
+    stopWatchingBowelToday = null;
+  }
+  bodyRange = {}; // 体組成から離れたら、手元のデータも消す
+  chartMode = mode;
+  chartTitle.textContent = mode === "body" ? `体組成の推移（${BODY_CHART_DAYS}日）` : "直近7日間の変化";
+  buildChartTabs();
+
+  if (mode === "body" && currentUid) {
+    const start = new Date();
+    start.setDate(start.getDate() - (BODY_CHART_DAYS - 1));
+    stopWatchingBodyRange = watchBodyInRange(currentUid, todayString(start), (data) => {
+      bodyRange = data;
+      renderChart();
+    });
+    // 今日のお通じ（体組成タブを開いている間だけ）
+    const today = todayString();
+    stopWatchingBowelToday = watchBowelInRange(currentUid, today, today, renderBowelToday);
+  }
+  renderChart();
+
+  // カレンダーも同じモードで表示し直す（ログイン中のみ）
+  if (currentUid && calYear !== null) showCalendarMonth(calYear, calMonth);
 }
 
 // ---------- ⑪ Ouraデータの読み込み・保存（Step 10） ----------
@@ -510,6 +573,10 @@ function showView(view) {
     btn.classList.toggle("is-active", btn.dataset.view === view);
   });
   if (!isBody) closeBodyForm(); // 体組成から離れたら入力フォームも閉じる
+  // 体組成を見ている間は、気分の記録・履歴のカードを隠す
+  document.querySelector("#mood-card").hidden = isBody;
+  document.querySelector("#mood-history-card").hidden = isBody;
+  setChartMode(isBody ? "body" : "condition"); // 下のグラフも連動して切り替える
 }
 
 viewSwitch.addEventListener("click", (e) => {
@@ -651,18 +718,25 @@ let calYear = null;
 let calMonth = null; // 0 = 1月
 let calMoods = {};
 let calHealth = {};
+let calBowel = [];
+let calBody = {};
 let stopCalMoods = null;
 let stopCalHealth = null;
+let stopCalBowel = null;
+let stopCalBody = null;
 
-// 月の監視をやめる（月を移動したとき・ログアウトしたとき）
+// 月の監視をやめる（月を移動したとき・モードを変えたとき・ログアウトしたとき）
 function stopCalendarWatchers() {
   if (stopCalMoods) { stopCalMoods(); stopCalMoods = null; }
   if (stopCalHealth) { stopCalHealth(); stopCalHealth = null; }
+  if (stopCalBowel) { stopCalBowel(); stopCalBowel = null; }
+  if (stopCalBody) { stopCalBody(); stopCalBody = null; }
 }
 
 // 指定した月を表示：前の月の監視を止めてから、新しい月の監視を始める
 function showCalendarMonth(year, month) {
   stopCalendarWatchers();
+  if (!currentUid) return;
 
   // Date は「13月」→翌年1月 のように自動で繰り上げてくれる
   const first = new Date(year, month, 1);
@@ -675,22 +749,83 @@ function showCalendarMonth(year, month) {
 
   calMoods = {};
   calHealth = {};
+  calBowel = [];
+  calBody = {};
   renderCurrentCalendar();
 
-  // 🧠 2種類の範囲検索で、その月の分だけを取得・監視
-  stopCalMoods = watchMoodsInRange(currentUid, startDate, endDate, (moods) => {
-    calMoods = moods;
-    renderCurrentCalendar();
-  });
-  stopCalHealth = watchHealthInRange(currentUid, startDate, endDate, (health) => {
-    calHealth = health;
-    renderCurrentCalendar();
-  });
+  if (chartMode === "body") {
+    // 体組成モード：お通じ と 体重（体組成タブを開いている間だけ）
+    stopCalBowel = watchBowelInRange(currentUid, startDate, endDate, (list) => {
+      calBowel = list;
+      renderCurrentCalendar();
+    });
+    stopCalBody = watchBodyInRange(currentUid, startDate, (data) => {
+      calBody = data;
+      renderCurrentCalendar();
+    });
+  } else {
+    // 🧠 2種類の範囲検索で、その月の分だけを取得・監視
+    stopCalMoods = watchMoodsInRange(currentUid, startDate, endDate, (moods) => {
+      calMoods = moods;
+      renderCurrentCalendar();
+    });
+    stopCalHealth = watchHealthInRange(currentUid, startDate, endDate, (health) => {
+      calHealth = health;
+      renderCurrentCalendar();
+    });
+  }
 }
 
+const calLegend = document.querySelector("#cal-legend");
+
 function renderCurrentCalendar() {
-  renderCalendar(calendarEl, calSummary, calYear, calMonth, calMoods, calHealth);
+  if (chartMode === "body") {
+    renderBodyCalendar(calendarEl, calSummary, calYear, calMonth, calBowel, calBody);
+    calLegend.textContent = "🌱＝お通じ（×回数）　／　数字＝その日の体重（kg）";
+  } else {
+    renderCalendar(calendarEl, calSummary, calYear, calMonth, calMoods, calHealth);
+    calLegend.textContent = "絵文字＝その日最後に記録した気分　／　数字＝Ouraのコンディション（高いほど緑が濃い）";
+  }
 }
 
 document.querySelector("#cal-prev").addEventListener("click", () => showCalendarMonth(calYear, calMonth - 1));
 document.querySelector("#cal-next").addEventListener("click", () => showCalendarMonth(calYear, calMonth + 1));
+
+// ---------- ⑰ お通じのワンタップ記録 ----------
+const bowelBtn = document.querySelector("#bowel-btn");
+const bowelToday = document.querySelector("#bowel-today");
+const bowelUndoBtn = document.querySelector("#bowel-undo-btn");
+let lastBowelToday = null; // 今日の最後の1件（取り消し用）
+
+// 今日の記録（watchBowelInRange から、変わるたびに呼ばれる）
+function renderBowelToday(list) {
+  lastBowelToday = list[list.length - 1] ?? null;
+  if (!lastBowelToday) {
+    bowelToday.textContent = "今日はまだ記録がありません";
+  } else {
+    const time = new Date(lastBowelToday.recordedAt).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
+    bowelToday.textContent = `今日：${list.length}回（最後 ${time}）`;
+  }
+  bowelUndoBtn.hidden = !lastBowelToday;
+}
+
+bowelBtn.addEventListener("click", async () => {
+  if (!currentUid) return;
+  try {
+    await addBowel(currentUid); // 画面は onValue が自動で更新する
+  } catch (error) {
+    console.error(error);
+    bowelToday.textContent = "記録できませんでした: " + error.message;
+  }
+});
+
+bowelUndoBtn.addEventListener("click", async () => {
+  if (!currentUid || !lastBowelToday) return;
+  if (!confirm("今日の最後の記録を取り消しますか？")) return;
+  try {
+    await deleteBowel(currentUid, lastBowelToday.id);
+  } catch (error) {
+    console.error(error);
+    bowelToday.textContent = "取り消せませんでした: " + error.message;
+  }
+});

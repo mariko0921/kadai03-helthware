@@ -74,6 +74,12 @@
         </div>
 
         <div id="body-panel" hidden>
+          <!-- お通じのワンタップ記録 -->
+          <div class="bowel-row">
+            <button id="bowel-btn" class="btn bowel-btn">🌱 出た</button>
+            <span id="bowel-today" class="muted"></span>
+            <button id="bowel-undo-btn" class="link-btn" hidden>取り消す</button>
+          </div>
           <div id="body-latest"></div>
           <div class="btn-row">
             <button id="body-edit-btn" class="btn">計測値を記録</button>
@@ -94,8 +100,8 @@
         </div>
       </div>
 
-      <!-- 2. 気分のワンタップ記録 -->
-      <div class="card">
+      <!-- 2. 気分のワンタップ記録（体組成タブのときは隠す） -->
+      <div id="mood-card" class="card">
         <h2 class="card-title">いまの気分は？</h2>
         <p class="muted">記録は任意です。ワンタップで残せます。</p>
         <div id="mood-buttons" class="mood-buttons"></div>
@@ -108,7 +114,7 @@
 
       <!-- 3. 直近7日間 -->
       <div class="card">
-        <h2 class="card-title">直近7日間の変化</h2>
+        <h2 id="chart-title" class="card-title">直近7日間の変化</h2>
         <div id="chart-tabs" class="chart-tabs"></div>
         <div id="chart-summary" class="chart-summary"></div>
         <div class="chart-box">
@@ -117,8 +123,8 @@
         </div>
       </div>
 
-      <!-- 4. 気分の履歴 -->
-      <div class="card">
+      <!-- 4. 気分の履歴（体組成タブのときは隠す） -->
+      <div id="mood-history-card" class="card">
         <h2 class="card-title">最近の気分の記録</h2>
         <ul id="mood-history" class="history"></ul>
       </div>
@@ -132,7 +138,7 @@
         </div>
         <div id="cal-summary" class="chart-summary cal-summary"></div>
         <div id="calendar" class="calendar"></div>
-        <p class="muted cal-legend">絵文字＝その日最後に記録した気分　／　数字＝Ouraのコンディション（高いほど緑が濃い）</p>
+        <p id="cal-legend" class="muted cal-legend"></p>
       </div>
 
       <!-- ===== データ設定 ===== -->
