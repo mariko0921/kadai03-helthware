@@ -7,7 +7,6 @@ import { todayString } from "./mood.js";
 
 export const SOURCE_LABELS = {
   oura: "Oura（実データ）",
-  demo: "デモデータ",
 };
 
 // 値を表示用の文字列に変換。値が無ければ「未取得」
@@ -64,7 +63,7 @@ export function renderToday(container, day, source) {
   // 取得元と取得日時（デモは作成日時）
   const time = day ? formatDateTime(day.fetchedAt ?? day.generatedAt) : null;
   const sourceLine = day
-    ? `取得元：${SOURCE_LABELS[source]}　／　${source === "demo" ? "作成" : "取得"}：${time}`
+    ? `取得元：${SOURCE_LABELS[source]}　／　取得：${time}`
     : `取得元：${SOURCE_LABELS[source]}　／　今日のデータはまだありません`;
 
   container.innerHTML = `
@@ -88,7 +87,7 @@ export const CHART_METRICS = [
 ];
 
 // ---------- 🧠 データの整形：DBのデータ → グラフ用の配列 ----------
-// recentHealth = { "2026-11-26": { demo: {...} }, ... }
+// recentHealth = { "2026-11-26": { oura: {...} }, ... }
 // 戻り値 = { labels: ["11/20(木)", ...7個], values: [82, null, 75, ...7個] }
 export function buildWeekSeries(recentHealth, source, metricKey, days = 7) {
   const labels = [];
@@ -153,6 +152,11 @@ export function renderWeekChart(canvas, summaryEl, series, metricKey) {
   canvas.parentElement.classList.toggle("is-empty", allMissing);
 
   if (!chart) {
+    // グラフの文字もアプリのフォント・色に合わせる
+    const css = getComputedStyle(document.documentElement);
+    window.Chart.defaults.font.family = css.getPropertyValue("--font-body").trim();
+    window.Chart.defaults.color = css.getPropertyValue("--muted").trim();
+
     chart = new window.Chart(canvas, {
       type: "line",
       data: { labels, datasets: [{ label, data: values }] },
@@ -169,7 +173,7 @@ export function renderWeekChart(canvas, summaryEl, series, metricKey) {
         },
         scales: {
           x: { grid: { display: false } },
-          y: { grid: { color: "#eef0ec" }, border: { display: false } },
+          y: { grid: { color: "#ece3d2" }, border: { display: false } },
         },
         elements: {
           line: { borderWidth: 2, tension: 0.3 },

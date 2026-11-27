@@ -3,35 +3,82 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OGARU</title>
+  <title>OGARU｜心と体の変化を、そっと記録する</title>
+  <!-- フォント：Cinzel（ロゴ・彫刻風）/ Shippori Mincho（見出し）/ Zen Maru Gothic（本文） -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Shippori+Mincho:wght@500;600&family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="CSS/style.css">
 </head>
 <body>
+  <!-- 木漏れ日の背景（装飾のみ。読み上げ・クリックの対象外） -->
+  <div class="komorebi" aria-hidden="true">
+    <div class="komorebi-light"></div>
+    <svg class="komorebi-leaves" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice">
+          <g class="sway sway-a"><path d="M-60 -40 Q139 81 366 258" stroke-width="7.0"/><ellipse cx="270" cy="168" rx="24" ry="10" transform="rotate(-3 270 168)"/><ellipse cx="255" cy="189" rx="23" ry="9" transform="rotate(72 255 189)"/><ellipse cx="194" cy="117" rx="17" ry="7" transform="rotate(-2 194 117)"/><ellipse cx="176" cy="134" rx="18" ry="7" transform="rotate(99 176 134)"/><ellipse cx="259" cy="152" rx="24" ry="10" transform="rotate(-33 259 152)"/><ellipse cx="238" cy="178" rx="17" ry="8" transform="rotate(104 238 178)"/><ellipse cx="148" cy="84" rx="18" ry="7" transform="rotate(-5 148 84)"/><ellipse cx="130" cy="102" rx="19" ry="8" transform="rotate(99 130 102)"/><ellipse cx="266" cy="162" rx="24" ry="9" transform="rotate(-13 266 162)"/><ellipse cx="250" cy="183" rx="19" ry="9" transform="rotate(72 250 183)"/><ellipse cx="198" cy="112" rx="24" ry="11" transform="rotate(-11 198 112)"/><ellipse cx="180" cy="141" rx="27" ry="13" transform="rotate(80 180 141)"/><ellipse cx="137" cy="68" rx="23" ry="11" transform="rotate(-20 137 68)"/><ellipse cx="116" cy="93" rx="20" ry="10" transform="rotate(96 116 93)"/><ellipse cx="101" cy="42" rx="27" ry="11" transform="rotate(-15 101 42)"/><ellipse cx="79" cy="63" rx="17" ry="8" transform="rotate(87 79 63)"/><ellipse cx="311" cy="189" rx="28" ry="12" transform="rotate(-20 311 189)"/><ellipse cx="285" cy="219" rx="24" ry="11" transform="rotate(94 285 219)"/><path d="M170 112 Q224 281 283 424" stroke-width="4.5"/><ellipse cx="224" cy="214" rx="25" ry="13" transform="rotate(11 224 214)"/><ellipse cx="190" cy="223" rx="20" ry="9" transform="rotate(134 190 223)"/><ellipse cx="271" cy="363" rx="22" ry="9" transform="rotate(34 271 363)"/><ellipse cx="249" cy="366" rx="17" ry="8" transform="rotate(109 249 366)"/><ellipse cx="225" cy="235" rx="21" ry="10" transform="rotate(26 225 235)"/><ellipse cx="202" cy="245" rx="22" ry="10" transform="rotate(108 202 245)"/><ellipse cx="298" cy="402" rx="28" ry="12" transform="rotate(6 298 402)"/><ellipse cx="263" cy="415" rx="21" ry="10" transform="rotate(120 263 415)"/><ellipse cx="294" cy="423" rx="18" ry="8" transform="rotate(30 294 423)"/><ellipse cx="271" cy="434" rx="23" ry="10" transform="rotate(113 271 434)"/><ellipse cx="235" cy="269" rx="22" ry="9" transform="rotate(35 235 269)"/><ellipse cx="204" cy="280" rx="29" ry="14" transform="rotate(125 204 280)"/><path d="M234 300 Q212 428 261 493" stroke-width="2.0"/><ellipse cx="270" cy="477" rx="27" ry="12" transform="rotate(17 270 477)"/><ellipse cx="236" cy="481" rx="17" ry="8" transform="rotate(131 236 481)"/><ellipse cx="240" cy="382" rx="19" ry="8" transform="rotate(45 240 382)"/><ellipse cx="218" cy="382" rx="17" ry="6" transform="rotate(129 218 382)"/><ellipse cx="241" cy="398" rx="21" ry="8" transform="rotate(44 241 398)"/><ellipse cx="209" cy="397" rx="25" ry="10" transform="rotate(148 209 397)"/><path d="M221 263 Q242 362 322 404" stroke-width="2.0"/><ellipse cx="342" cy="405" rx="23" ry="9" transform="rotate(3 342 405)"/><ellipse cx="321" cy="422" rx="21" ry="9" transform="rotate(93 321 422)"/><ellipse cx="317" cy="396" rx="16" ry="8" transform="rotate(14 317 396)"/><ellipse cx="298" cy="408" rx="18" ry="8" transform="rotate(108 298 408)"/><ellipse cx="263" cy="313" rx="30" ry="14" transform="rotate(1 263 313)"/><ellipse cx="229" cy="328" rx="20" ry="8" transform="rotate(114 229 328)"/><path d="M114 73 Q202 189 245 331" stroke-width="4.5"/><ellipse cx="207" cy="174" rx="30" ry="14" transform="rotate(-0 207 174)"/><ellipse cx="165" cy="194" rx="27" ry="13" transform="rotate(126 165 194)"/><ellipse cx="199" cy="178" rx="21" ry="8" transform="rotate(10 199 178)"/><ellipse cx="177" cy="193" rx="20" ry="8" transform="rotate(99 177 193)"/><ellipse cx="243" cy="265" rx="22" ry="11" transform="rotate(-5 243 265)"/><ellipse cx="205" cy="286" rx="29" ry="12" transform="rotate(133 205 286)"/><ellipse cx="195" cy="179" rx="19" ry="8" transform="rotate(20 195 179)"/><ellipse cx="167" cy="196" rx="29" ry="14" transform="rotate(120 167 196)"/><ellipse cx="229" cy="226" rx="27" ry="11" transform="rotate(5 229 226)"/><ellipse cx="191" cy="246" rx="29" ry="14" transform="rotate(121 191 246)"/><ellipse cx="244" cy="282" rx="18" ry="9" transform="rotate(11 244 282)"/><ellipse cx="219" cy="302" rx="27" ry="14" transform="rotate(110 219 302)"/><path d="M195 203 Q268 250 306 350" stroke-width="2.0"/><ellipse cx="266" cy="247" rx="29" ry="14" transform="rotate(13 266 247)"/><ellipse cx="240" cy="266" rx="28" ry="14" transform="rotate(93 240 266)"/><ellipse cx="306" cy="304" rx="24" ry="9" transform="rotate(6 306 304)"/><ellipse cx="285" cy="329" rx="30" ry="14" transform="rotate(88 285 329)"/><ellipse cx="294" cy="281" rx="22" ry="11" transform="rotate(-15 294 281)"/><ellipse cx="267" cy="301" rx="19" ry="8" transform="rotate(117 267 301)"/><path d="M189 191 Q235 233 321 288" stroke-width="2.0"/><ellipse cx="242" cy="212" rx="21" ry="9" transform="rotate(-31 242 212)"/><ellipse cx="225" cy="247" rx="29" ry="12" transform="rotate(92 225 247)"/><ellipse cx="331" cy="275" rx="23" ry="10" transform="rotate(-16 331 275)"/><ellipse cx="317" cy="300" rx="22" ry="9" transform="rotate(72 317 300)"/><ellipse cx="230" cy="205" rx="18" ry="8" transform="rotate(-27 230 205)"/><ellipse cx="212" cy="234" rx="24" ry="10" transform="rotate(97 212 234)"/></g>
+          <g class="sway sway-b"><path d="M1060 -60 Q847 124 631 300" stroke-width="7.0"/><ellipse cx="697" cy="264" rx="24" ry="10" transform="rotate(101 697 264)"/><ellipse cx="677" cy="241" rx="27" ry="12" transform="rotate(185 677 241)"/><ellipse cx="778" cy="209" rx="29" ry="12" transform="rotate(78 778 209)"/><ellipse cx="753" cy="178" rx="23" ry="10" transform="rotate(196 753 178)"/><ellipse cx="731" cy="240" rx="23" ry="10" transform="rotate(89 731 240)"/><ellipse cx="710" cy="208" rx="26" ry="13" transform="rotate(208 710 208)"/><ellipse cx="648" cy="306" rx="24" ry="12" transform="rotate(96 648 306)"/><ellipse cx="635" cy="278" rx="18" ry="7" transform="rotate(204 635 278)"/><ellipse cx="807" cy="169" rx="19" ry="8" transform="rotate(102 807 169)"/><ellipse cx="788" cy="144" rx="27" ry="13" transform="rotate(198 788 144)"/><ellipse cx="908" cy="96" rx="25" ry="10" transform="rotate(80 908 96)"/><ellipse cx="880" cy="62" rx="30" ry="12" transform="rotate(206 880 62)"/><ellipse cx="646" cy="308" rx="23" ry="11" transform="rotate(91 646 308)"/><ellipse cx="631" cy="281" rx="18" ry="8" transform="rotate(204 631 281)"/><ellipse cx="787" cy="188" rx="19" ry="8" transform="rotate(93 787 188)"/><ellipse cx="774" cy="166" rx="16" ry="7" transform="rotate(200 774 166)"/><ellipse cx="807" cy="169" rx="21" ry="9" transform="rotate(104 807 169)"/><ellipse cx="797" cy="148" rx="17" ry="8" transform="rotate(193 797 148)"/><path d="M758 196 Q609 139 498 156" stroke-width="4.5"/><ellipse cx="523" cy="162" rx="18" ry="8" transform="rotate(144 523 162)"/><ellipse cx="529" cy="128" rx="27" ry="11" transform="rotate(256 529 128)"/><ellipse cx="644" cy="183" rx="24" ry="11" transform="rotate(121 644 183)"/><ellipse cx="645" cy="153" rx="17" ry="8" transform="rotate(227 645 153)"/><ellipse cx="578" cy="168" rx="29" ry="13" transform="rotate(151 578 168)"/><ellipse cx="596" cy="140" rx="17" ry="8" transform="rotate(252 596 140)"/><ellipse cx="661" cy="185" rx="22" ry="9" transform="rotate(123 661 185)"/><ellipse cx="660" cy="145" rx="29" ry="12" transform="rotate(243 660 145)"/><ellipse cx="647" cy="177" rx="19" ry="8" transform="rotate(135 647 177)"/><ellipse cx="650" cy="154" rx="17" ry="7" transform="rotate(229 650 154)"/><ellipse cx="604" cy="172" rx="27" ry="11" transform="rotate(143 604 172)"/><ellipse cx="615" cy="143" rx="18" ry="8" transform="rotate(241 615 143)"/><path d="M656 164 Q618 186 542 200" stroke-width="2.0"/><ellipse cx="611" cy="205" rx="29" ry="11" transform="rotate(111 611 205)"/><ellipse cx="607" cy="166" rx="22" ry="10" transform="rotate(227 607 166)"/><ellipse cx="552" cy="215" rx="23" ry="11" transform="rotate(114 552 215)"/><ellipse cx="549" cy="181" rx="21" ry="10" transform="rotate(232 549 181)"/><ellipse cx="568" cy="212" rx="22" ry="9" transform="rotate(106 568 212)"/><ellipse cx="558" cy="188" rx="18" ry="7" transform="rotate(200 558 188)"/><path d="M572 152 Q478 198 450 189" stroke-width="2.0"/><ellipse cx="451" cy="207" rx="20" ry="8" transform="rotate(105 451 207)"/><ellipse cx="438" cy="180" rx="22" ry="9" transform="rotate(209 438 180)"/><ellipse cx="472" cy="210" rx="29" ry="15" transform="rotate(119 472 210)"/><ellipse cx="471" cy="176" rx="19" ry="10" transform="rotate(218 471 176)"/><ellipse cx="490" cy="197" rx="16" ry="7" transform="rotate(116 490 197)"/><ellipse cx="480" cy="172" rx="23" ry="9" transform="rotate(215 480 172)"/><path d="M813 150 Q783 283 818 431" stroke-width="4.5"/><ellipse cx="812" cy="240" rx="20" ry="8" transform="rotate(53 812 240)"/><ellipse cx="784" cy="238" rx="23" ry="11" transform="rotate(144 784 238)"/><ellipse cx="827" cy="368" rx="28" ry="12" transform="rotate(29 827 368)"/><ellipse cx="785" cy="375" rx="30" ry="12" transform="rotate(135 785 375)"/><ellipse cx="819" cy="378" rx="17" ry="8" transform="rotate(31 819 378)"/><ellipse cx="786" cy="380" rx="25" ry="12" transform="rotate(155 786 380)"/><ellipse cx="823" cy="406" rx="23" ry="10" transform="rotate(49 823 406)"/><ellipse cx="788" cy="401" rx="27" ry="13" transform="rotate(153 788 401)"/><ellipse cx="824" cy="349" rx="26" ry="12" transform="rotate(23 824 349)"/><ellipse cx="793" cy="351" rx="16" ry="7" transform="rotate(132 793 351)"/><ellipse cx="815" cy="312" rx="28" ry="12" transform="rotate(50 815 312)"/><ellipse cx="781" cy="305" rx="25" ry="11" transform="rotate(146 781 305)"/><path d="M800 306 Q888 359 936 412" stroke-width="2.0"/><ellipse cx="912" cy="370" rx="17" ry="8" transform="rotate(-20 912 370)"/><ellipse cx="900" cy="390" rx="17" ry="7" transform="rotate(82 900 390)"/><ellipse cx="938" cy="388" rx="26" ry="13" transform="rotate(-4 938 388)"/><ellipse cx="915" cy="409" rx="21" ry="9" transform="rotate(90 915 409)"/><ellipse cx="931" cy="378" rx="25" ry="11" transform="rotate(-24 931 378)"/><ellipse cx="915" cy="402" rx="18" ry="7" transform="rotate(75 915 402)"/><path d="M803 339 Q792 378 860 487" stroke-width="2.0"/><ellipse cx="832" cy="393" rx="26" ry="12" transform="rotate(10 832 393)"/><ellipse cx="801" cy="408" rx="23" ry="10" transform="rotate(114 801 408)"/><ellipse cx="841" cy="424" rx="29" ry="12" transform="rotate(30 841 424)"/><ellipse cx="799" cy="429" rx="29" ry="11" transform="rotate(138 799 429)"/><ellipse cx="844" cy="412" rx="30" ry="13" transform="rotate(5 844 412)"/><ellipse cx="811" cy="426" rx="19" ry="9" transform="rotate(113 811 426)"/></g>
+          <g class="sway sway-c"><path d="M1060 620 Q853 577 693 522" stroke-width="7.0"/><ellipse cx="898" cy="604" rx="29" ry="12" transform="rotate(142 898 604)"/><ellipse cx="915" cy="568" rx="23" ry="11" transform="rotate(259 915 568)"/><ellipse cx="744" cy="558" rx="29" ry="13" transform="rotate(152 744 558)"/><ellipse cx="757" cy="535" rx="16" ry="7" transform="rotate(231 757 535)"/><ellipse cx="819" cy="574" rx="18" ry="8" transform="rotate(149 819 574)"/><ellipse cx="821" cy="543" rx="28" ry="11" transform="rotate(241 821 543)"/><ellipse cx="744" cy="554" rx="18" ry="9" transform="rotate(131 744 554)"/><ellipse cx="748" cy="517" rx="29" ry="12" transform="rotate(255 748 517)"/><ellipse cx="832" cy="586" rx="30" ry="14" transform="rotate(146 832 586)"/><ellipse cx="845" cy="554" rx="22" ry="9" transform="rotate(243 845 554)"/><ellipse cx="923" cy="604" rx="28" ry="11" transform="rotate(156 923 604)"/><ellipse cx="943" cy="577" rx="19" ry="8" transform="rotate(263 943 577)"/><ellipse cx="800" cy="569" rx="21" ry="11" transform="rotate(153 800 569)"/><ellipse cx="813" cy="536" rx="27" ry="12" transform="rotate(261 813 536)"/><path d="M772 548 Q737 419 667 362" stroke-width="4.5"/><ellipse cx="670" cy="384" rx="27" ry="12" transform="rotate(190 670 384)"/><ellipse cx="698" cy="374" rx="17" ry="8" transform="rotate(285 698 374)"/><ellipse cx="725" cy="464" rx="21" ry="9" transform="rotate(189 725 464)"/><ellipse cx="758" cy="444" rx="30" ry="12" transform="rotate(301 758 444)"/><ellipse cx="680" cy="391" rx="24" ry="10" transform="rotate(195 680 391)"/><ellipse cx="704" cy="380" rx="18" ry="7" transform="rotate(281 704 380)"/><ellipse cx="660" cy="368" rx="19" ry="9" transform="rotate(188 660 368)"/><ellipse cx="690" cy="355" rx="22" ry="9" transform="rotate(310 690 355)"/><path d="M735 449 Q650 411 630 414" stroke-width="2.0"/><ellipse cx="652" cy="439" rx="28" ry="13" transform="rotate(143 652 439)"/><ellipse cx="665" cy="405" rx="22" ry="10" transform="rotate(248 665 405)"/><ellipse cx="650" cy="427" rx="17" ry="7" transform="rotate(151 650 427)"/><ellipse cx="662" cy="404" rx="18" ry="8" transform="rotate(267 662 404)"/><ellipse cx="635" cy="428" rx="19" ry="8" transform="rotate(133 635 428)"/><ellipse cx="637" cy="399" rx="22" ry="9" transform="rotate(242 637 399)"/><path d="M697 391 Q666 287 711 259" stroke-width="2.0"/><ellipse cx="677" cy="265" rx="23" ry="10" transform="rotate(210 677 265)"/><ellipse cx="708" cy="260" rx="21" ry="11" transform="rotate(311 708 260)"/><ellipse cx="678" cy="254" rx="30" ry="12" transform="rotate(211 678 254)"/><ellipse cx="712" cy="256" rx="18" ry="8" transform="rotate(315 712 256)"/><ellipse cx="673" cy="266" rx="26" ry="12" transform="rotate(208 673 266)"/><ellipse cx="713" cy="269" rx="22" ry="10" transform="rotate(338 713 269)"/><path d="M914 587 Q880 533 779 456" stroke-width="4.5"/><ellipse cx="849" cy="528" rx="20" ry="9" transform="rotate(185 849 528)"/><ellipse cx="870" cy="515" rx="18" ry="7" transform="rotate(284 870 515)"/><ellipse cx="824" cy="511" rx="21" ry="9" transform="rotate(169 824 511)"/><ellipse cx="845" cy="493" rx="16" ry="7" transform="rotate(280 845 493)"/><ellipse cx="829" cy="524" rx="25" ry="12" transform="rotate(156 829 524)"/><ellipse cx="851" cy="497" rx="19" ry="8" transform="rotate(276 851 497)"/><ellipse cx="767" cy="465" rx="20" ry="8" transform="rotate(164 767 465)"/><ellipse cx="787" cy="437" rx="25" ry="11" transform="rotate(277 787 437)"/><path d="M868 531 Q817 442 810 426" stroke-width="2.0"/><ellipse cx="806" cy="455" rx="26" ry="10" transform="rotate(192 806 455)"/><ellipse cx="841" cy="440" rx="26" ry="12" transform="rotate(304 841 440)"/><ellipse cx="816" cy="473" rx="20" ry="10" transform="rotate(172 816 473)"/><ellipse cx="838" cy="454" rx="19" ry="9" transform="rotate(284 838 454)"/><ellipse cx="809" cy="466" rx="23" ry="9" transform="rotate(173 809 466)"/><ellipse cx="835" cy="444" rx="22" ry="10" transform="rotate(284 835 444)"/><path d="M821 489 Q748 520 722 476" stroke-width="2.0"/><ellipse cx="762" cy="509" rx="17" ry="7" transform="rotate(151 762 509)"/><ellipse cx="768" cy="477" rx="28" ry="13" transform="rotate(254 768 477)"/><ellipse cx="713" cy="492" rx="21" ry="8" transform="rotate(120 713 492)"/><ellipse cx="716" cy="453" rx="26" ry="10" transform="rotate(255 716 453)"/><ellipse cx="723" cy="506" rx="21" ry="9" transform="rotate(139 723 506)"/><ellipse cx="728" cy="482" rx="16" ry="7" transform="rotate(229 728 482)"/></g>
+        </svg>
+  </div>
+
   <header class="header">
-    <h1 class="logo">OGARU</h1>
+    <div class="header-inner">
+      <h1 class="logo">OGARU</h1>
+      <!-- ログイン中だけ表示 -->
+      <div id="header-user" class="header-user" hidden>
+        <span id="conn-dot" class="conn-dot" title="接続状態"></span>
+        <span id="user-name" class="header-name"></span>
+        <button id="logout-btn" class="link-btn">ログアウト</button>
+      </div>
+    </div>
   </header>
 
+  <!-- オフライン時に表示 -->
+  <div id="offline-banner" class="offline-banner" hidden>
+    ⚠️ 通信できていません。最後に読み込んだ内容を表示しています（気分の記録は再接続後に送信されます）
+  </div>
+
   <main class="main">
-    <!-- 未ログイン時に表示 -->
-    <section id="login-view" class="card" hidden>
-      <p>心と体の変化を、そっと記録する。</p>
-      <button id="login-btn" class="btn">Googleでログイン</button>
+    <!-- ===== 未ログイン時 ===== -->
+    <section id="login-view" class="login" hidden>
+      <div class="plaque"><span class="plaque-logo">OGARU</span></div>
+      <p class="login-lead">心と体の変化を、<br>そっと記録する。</p>
+      <p class="login-text">
+        Ouraの健康データと、ワンタップの気分記録を重ねて、<br>
+        自分のリズムを知るためのダッシュボードです。
+      </p>
+      <button id="login-btn" class="btn btn-large">Googleでログイン</button>
+      <p class="muted login-note">健康データはあなた本人だけが閲覧できます。</p>
     </section>
 
-    <!-- ログイン中に表示 -->
+    <!-- ===== ログイン中 ===== -->
     <section id="app-view" hidden>
+      <div class="greeting">
+        <p id="greeting-text" class="greeting-text"></p>
+        <p id="greeting-date" class="muted"></p>
+      </div>
+
+      <!-- 1. 今日のコンディション -->
       <div class="card">
         <div class="card-head">
           <h2 class="card-title">今日のコンディション</h2>
-          <span id="demo-badge" class="demo-badge" hidden>デモデータを表示中</span>
-        </div>
-        <div id="source-switch" class="source-switch">
-          <button data-source="oura">実データ（Oura）</button>
-          <button data-source="demo">デモ</button>
         </div>
         <div id="today-health"></div>
       </div>
 
+      <!-- 2. 気分のワンタップ記録 -->
+      <div class="card">
+        <h2 class="card-title">いまの気分は？</h2>
+        <p class="muted">記録は任意です。ワンタップで残せます。</p>
+        <div id="mood-buttons" class="mood-buttons"></div>
+        <div class="today-mood-row">
+          <span class="muted">今日の気分</span>
+          <span id="today-mood" class="today-mood">読み込み中…</span>
+        </div>
+        <p id="mood-message" class="mood-message"></p>
+      </div>
+
+      <!-- 3. 直近7日間 -->
       <div class="card">
         <h2 class="card-title">直近7日間の変化</h2>
         <div id="chart-tabs" class="chart-tabs"></div>
@@ -42,52 +89,48 @@
         </div>
       </div>
 
+      <!-- 4. 気分の履歴 -->
       <div class="card">
-        <p>ようこそ、<span id="user-name"></span> さん</p>
-        <p class="muted">uid: <span id="user-uid"></span></p>
-        <button id="logout-btn" class="btn btn-sub">ログアウト</button>
-      </div>
-
-      <div class="card">
-        <h2 class="card-title">いまの気分は？</h2>
-        <p class="muted">記録は任意です。ワンタップで残せます。</p>
-        <div id="mood-buttons" class="mood-buttons"></div>
-        <p id="mood-message" class="muted"></p>
-      </div>
-
-      <div class="card">
-        <h2 class="card-title">今日の気分</h2>
-        <p id="today-mood" class="today-mood">読み込み中…</p>
-      </div>
-
-      <div class="card">
-        <h2 class="card-title">最近の記録</h2>
+        <h2 class="card-title">最近の気分の記録</h2>
         <ul id="mood-history" class="history"></ul>
       </div>
 
-      <div class="card">
-        <h2 class="card-title">デモデータ</h2>
-        <p class="muted">実データとは別の場所に保存されます。表示中は「デモ」と明示します。</p>
-        <button id="demo-create-btn" class="btn">デモデータを作成（7日分）</button>
-        <button id="demo-delete-btn" class="btn btn-sub">デモデータを削除</button>
-        <p id="demo-message" class="muted"></p>
-      </div>
+      <!-- ===== データ設定 ===== -->
+      <h2 class="section-title">データ設定</h2>
 
+      <!-- 5. Oura連携 -->
       <div class="card">
         <h2 class="card-title">Oura連携</h2>
         <p id="oura-status" class="muted"></p>
         <p id="oura-sync" class="oura-sync"></p>
-        <button id="oura-connect-btn" class="btn">Ouraと連携</button>
-        <button id="oura-copy-btn" class="btn" hidden>トークンをコピー</button>
-        <label id="oura-import-label" class="btn btn-file" hidden>
-          Ouraデータを読み込む
-          <input id="oura-import-input" type="file" accept=".json,application/json" hidden>
-        </label>
-        <button id="oura-disconnect-btn" class="btn btn-sub" hidden>連携解除</button>
+        <div class="btn-row">
+          <button id="oura-connect-btn" class="btn">Ouraと連携</button>
+          <button id="oura-copy-btn" class="btn" hidden>トークンをコピー</button>
+          <label id="oura-import-label" class="btn btn-file" hidden>
+            Ouraデータを読み込む
+            <input id="oura-import-input" type="file" accept=".json,application/json" hidden>
+          </label>
+          <button id="oura-disconnect-btn" class="btn btn-sub" hidden>連携解除</button>
+        </div>
+        <details class="howto">
+          <summary>Ouraデータの取り込み方</summary>
+          <ol>
+            <li>「トークンをコピー」を押す</li>
+            <li>ターミナルで <code>python3 scripts/fetch_oura.py</code> を実行し、貼り付ける</li>
+            <li>「Ouraデータを読み込む」で <code>exports/oura-export.json</code> を選ぶ</li>
+          </ol>
+          <p class="muted">Oura APIはブラウザからの直接取得（CORS）を許可していないため、この方式にしています。</p>
+        </details>
         <pre id="oura-output" class="oura-output"></pre>
       </div>
+
     </section>
   </main>
+
+  <footer class="footer">
+    <p>健康データは Firebase セキュリティルールにより、あなた本人だけが閲覧できます。</p>
+    <p>© OGARU</p>
+  </footer>
 
   <!-- グラフ描画ライブラリ（window.Chart として使える） -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>

@@ -1,7 +1,8 @@
 // =====================================================
 // script.js : 画面の処理
 // =====================================================
-import { auth, provider } from "./firebase.js";
+import { auth, provider, db } from "./firebase.js";
+import { ref, onValue } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-database.js";
 import {
   signInWithPopup,
   signOut,
@@ -23,8 +24,6 @@ import {
   convertOuraExport,
 } from "./oura.js";
 import {
-  createDemoData,
-  deleteDemoData,
   watchRecentHealth,
   saveOuraDays,
   watchConnection,
@@ -55,7 +54,9 @@ const appView = document.querySelector("#app-view");
 const loginBtn = document.querySelector("#login-btn");
 const logoutBtn = document.querySelector("#logout-btn");
 const userName = document.querySelector("#user-name");
-const userUid = document.querySelector("#user-uid");
+const headerUser = document.querySelector("#header-user");
+const greetingText = document.querySelector("#greeting-text");
+const greetingDate = document.querySelector("#greeting-date");
 
 // ---------- ① ログイン ----------
 // ボタンを押すとGoogleのログイン画面がポップアップで開く
@@ -81,9 +82,10 @@ onAuthStateChanged(auth, (user) => {
   currentUid = user ? user.uid : null;
   if (user) {
     userName.textContent = user.displayName;
-    userUid.textContent = user.uid; // ← このuidがDBの保存場所の鍵になる
+    renderGreeting(user.displayName);
     loginView.hidden = true;
     appView.hidden = false;
+    headerUser.hidden = false;
 
     // ログインしたら、自分の気分データの監視を開始
     stopWatchingMoods = watchRecentMoods(user.uid, renderMoods);
@@ -108,8 +110,21 @@ onAuthStateChanged(auth, (user) => {
     }
     loginView.hidden = false;
     appView.hidden = true;
+    headerUser.hidden = true;
   }
 });
+
+// 時間帯に合わせたあいさつと今日の日付
+function renderGreeting(displayName) {
+  const now = new Date();
+  const h = now.getHours();
+  const hello = h < 4 ? "こんばんは" : h < 11 ? "おはようございます" : h < 18 ? "こんにちは" : "こんばんは";
+  const firstName = (displayName || "").split(" ")[0];
+  greetingText.textContent = firstName ? `${hello}、${firstName}さん` : hello;
+  greetingDate.textContent = now.toLocaleDateString("ja-JP", {
+    year: "numeric", month: "long", day: "numeric", weekday: "short",
+  });
+}
 
 // ---------- ④ 気分のワンタップ記録（Create） ----------
 const moodButtons = document.querySelector("#mood-buttons");
@@ -288,41 +303,12 @@ ouraCopyBtn.addEventListener("click", async () => {
     "📋 コピーしました。ターミナルで python3 scripts/fetch_oura.py を実行し、貼り付けてください。";
 });
 
-// ---------- ⑧ デモデータの作成・削除（Step 7） ----------
-const demoCreateBtn = document.querySelector("#demo-create-btn");
-const demoDeleteBtn = document.querySelector("#demo-delete-btn");
-const demoMessage = document.querySelector("#demo-message");
-
-demoCreateBtn.addEventListener("click", async () => {
-  if (!currentUid) return;
-  try {
-    await createDemoData(currentUid, 7);
-    demoMessage.textContent = "デモデータを7日分作成しました";
-  } catch (error) {
-    console.error(error);
-    demoMessage.textContent = "作成できませんでした: " + error.message;
-  }
-});
-
-demoDeleteBtn.addEventListener("click", async () => {
-  if (!currentUid) return;
-  if (!confirm("デモデータをすべて削除しますか？（実データは消えません）")) return;
-  try {
-    const count = await deleteDemoData(currentUid);
-    demoMessage.textContent = `デモデータを${count}日分削除しました`;
-  } catch (error) {
-    console.error(error);
-    demoMessage.textContent = "削除できませんでした: " + error.message;
-  }
-});
-
 // ---------- ⑨ 今日のコンディション表示（Step 8） ----------
 const todayHealth = document.querySelector("#today-health");
-const sourceSwitch = document.querySelector("#source-switch");
-const demoBadge = document.querySelector("#demo-badge");
 
-// 表示する取得元（"oura" or "demo"）。リロードしても覚えておく
-let displaySource = localStorage.getItem("ogaru.displaySource") || "oura";
+// 表示する取得元。今は Oura のみ（将来 Apple などを足すときはここを切り替える）
+const displaySource = "oura";
+localStorage.removeItem("ogaru.displaySource"); // デモ廃止前の設定の掃除
 
 // 最後に受け取った7日分のデータ（切り替え時に再描画するため保持）
 let recentHealth = {};
@@ -333,28 +319,13 @@ function onHealthChanged(data) {
   renderHealth();
 }
 
-// 選んだ取得元のデータだけを取り出して描画する（混ぜない）
+// 取得元のデータだけを取り出して描画する
 function renderHealth() {
   const today = todayString();
-  const todayData = recentHealth[today]?.[displaySource]; // 例: data["2026-11-26"]["demo"]
+  const todayData = recentHealth[today]?.[displaySource]; // 例: data["2026-11-27"]["oura"]
   renderToday(todayHealth, todayData, displaySource);
-  renderChart(); // グラフも同じデータ・同じ取得元で描き直す
-
-  // デモ表示中は必ずバッジを出す
-  demoBadge.hidden = displaySource !== "demo";
-  sourceSwitch.querySelectorAll("button").forEach((btn) => {
-    btn.classList.toggle("is-active", btn.dataset.source === displaySource);
-  });
+  renderChart(); // グラフも同じデータで描き直す
 }
-
-// 実データ / デモ の切り替え
-sourceSwitch.addEventListener("click", (e) => {
-  const btn = e.target.closest("button[data-source]");
-  if (!btn) return;
-  displaySource = btn.dataset.source;
-  localStorage.setItem("ogaru.displaySource", displaySource);
-  renderHealth(); // DBは読み直さず、手元のデータで描き直す
-});
 
 // ---------- ⑩ 直近7日間のグラフ（Step 9） ----------
 const chartTabs = document.querySelector("#chart-tabs");
@@ -408,10 +379,7 @@ ouraImportInput.addEventListener("change", async () => {
     await saveOuraDays(currentUid, days, Date.parse(json.exportedAt));
     ouraOutput.textContent = `✅ ${count}日分のOuraデータを保存しました`;
 
-    // ④ 表示を実データに切り替える（画面はonValueで自動更新される）
-    displaySource = "oura";
-    localStorage.setItem("ogaru.displaySource", displaySource);
-    renderHealth();
+    // 画面は onValue が自動で更新する
   } catch (error) {
     console.error(error);
     ouraOutput.textContent = "❌ 読み込めませんでした: " + error.message;
@@ -449,3 +417,25 @@ function renderOuraSync(conn) {
   ouraSync.textContent = text;
   ouraSync.classList.toggle("is-stale", isStale);
 }
+
+// ---------- ⑬ 接続状態の表示（Step 12） ----------
+// ".info/connected" は Firebase が用意している特別な場所
+// サーバーとつながっていれば true、切れていれば false が届く（ルール設定は不要）
+const connDot = document.querySelector("#conn-dot");
+const offlineBanner = document.querySelector("#offline-banner");
+let hasConnectedOnce = false; // 起動直後の「まだつながっていない」は警告しない
+
+onValue(ref(db, ".info/connected"), (snapshot) => {
+  const online = snapshot.val() === true;
+  if (online) hasConnectedOnce = true;
+
+  connDot.classList.toggle("is-online", online);
+  connDot.title = online ? "接続中" : "オフライン";
+  // 一度つながった後に切れたときだけバナーを出す
+  offlineBanner.hidden = online || !hasConnectedOnce;
+});
+
+// 起動から5秒たってもつながらなければ、バナーを出す
+setTimeout(() => {
+  if (!hasConnectedOnce) offlineBanner.hidden = false;
+}, 5000);
