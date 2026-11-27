@@ -29,7 +29,17 @@ import {
   watchConnection,
 } from "./health.js";
 import {
+  BODY_METRICS,
+  saveBody,
+  deleteBody,
+  watchLatestBody,
+  getBody,
+  saveHealthPlanetDays,
+} from "./body.js";
+import { convertHealthPlanetExport } from "./healthplanet.js";
+import {
   renderToday,
+  renderBody,
   CHART_METRICS,
   buildWeekSeries,
   renderWeekChart,
@@ -47,6 +57,12 @@ let stopWatchingHealth = null;
 
 // Oura連携状態の監視をやめるための関数
 let stopWatchingConnection = null;
+
+// 体組成の監視をやめるための関数
+let stopWatchingBody = null;
+
+// HealthPlanet連携状態の監視をやめるための関数
+let stopWatchingHpConnection = null;
 
 // ---------- 画面の要素を取得 ----------
 const loginView = document.querySelector("#login-view");
@@ -93,6 +109,10 @@ onAuthStateChanged(auth, (user) => {
     stopWatchingHealth = watchRecentHealth(user.uid, 7, onHealthChanged);
     // Ouraの最終同期日時の監視も開始
     stopWatchingConnection = watchConnection(user.uid, "oura", renderOuraSync);
+    // 体組成（最新2回分）の監視も開始
+    stopWatchingBody = watchLatestBody(user.uid, (list) => renderBody(bodyLatest, list));
+    // HealthPlanetの最終同期日時（Ouraと同じ関数を、取得元だけ変えて使い回す）
+    stopWatchingHpConnection = watchConnection(user.uid, "healthplanet", (conn) => renderSyncInfo(hpSync, conn));
   } else {
     // ログアウトしたら監視をやめる
     // （やめないと、権限がないのに読もうとしてエラーになる）
@@ -108,6 +128,17 @@ onAuthStateChanged(auth, (user) => {
       stopWatchingConnection();
       stopWatchingConnection = null;
     }
+    if (stopWatchingBody) {
+      stopWatchingBody();
+      stopWatchingBody = null;
+    }
+    if (stopWatchingHpConnection) {
+      stopWatchingHpConnection();
+      stopWatchingHpConnection = null;
+    }
+    // センシティブな体組成は、ログアウト時に画面からも消してコンディション表示に戻す
+    bodyLatest.innerHTML = "";
+    showView("condition");
     loginView.hidden = false;
     appView.hidden = true;
     headerUser.hidden = true;
@@ -393,11 +424,16 @@ ouraImportInput.addEventListener("change", async () => {
 const ouraSync = document.querySelector("#oura-sync");
 const ONE_DAY = 24 * 60 * 60 * 1000; // 24時間（ミリ秒）
 
-// conn = connections/{uid}/oura の中身（未同期なら null）
 function renderOuraSync(conn) {
+  renderSyncInfo(ouraSync, conn);
+}
+
+// 最終同期日時の表示（Oura / HealthPlanet 共通）
+// el = 表示する要素、conn = connections/{uid}/{source} の中身（未同期なら null）
+function renderSyncInfo(el, conn) {
   if (!conn) {
-    ouraSync.textContent = "まだ同期していません";
-    ouraSync.classList.remove("is-stale");
+    el.textContent = "まだ同期していません";
+    el.classList.remove("is-stale");
     return;
   }
 
@@ -406,16 +442,18 @@ function renderOuraSync(conn) {
       month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit",
     });
 
-  let text =
-    `最終同期：${fmt(conn.lastSyncAt)}` +
-    `（Ouraから取得：${fmt(conn.dataFetchedAt)}・${conn.rangeStart}〜${conn.rangeEnd} の${conn.dayCount}日分）`;
+  // データが0件のときは期間の代わりに「まだありません」と出す
+  const range = conn.dayCount > 0
+    ? `${conn.rangeStart}〜${conn.rangeEnd} の${conn.dayCount}日分`
+    : "計測データはまだありません";
+  let text = `最終同期：${fmt(conn.lastSyncAt)}（取得：${fmt(conn.dataFetchedAt)}・${range}）`;
 
   // 24時間以上たっていたら注意を出す
   const isStale = Date.now() - conn.lastSyncAt > ONE_DAY;
   if (isStale) text = "⚠️ 1日以上同期していません　" + text;
 
-  ouraSync.textContent = text;
-  ouraSync.classList.toggle("is-stale", isStale);
+  el.textContent = text;
+  el.classList.toggle("is-stale", isStale);
 }
 
 // ---------- ⑬ 接続状態の表示（Step 12） ----------
@@ -439,3 +477,160 @@ onValue(ref(db, ".info/connected"), (snapshot) => {
 setTimeout(() => {
   if (!hasConnectedOnce) offlineBanner.hidden = false;
 }, 5000);
+
+// ---------- ⑭ 体組成タブ（Step 12） ----------
+const viewSwitch = document.querySelector("#view-switch");
+const todayTitle = document.querySelector("#today-title");
+const conditionPanel = document.querySelector("#condition-panel");
+const bodyPanel = document.querySelector("#body-panel");
+const bodyLatest = document.querySelector("#body-latest");
+const bodyEditBtn = document.querySelector("#body-edit-btn");
+const bodyForm = document.querySelector("#body-form");
+const bodyDate = document.querySelector("#body-date");
+const bodyFields = document.querySelector("#body-fields");
+const bodyCancelBtn = document.querySelector("#body-cancel-btn");
+const bodyDeleteBtn = document.querySelector("#body-delete-btn");
+const bodyMessage = document.querySelector("#body-message");
+
+// --- 表示の切り替え（コンディション / 体組成） ---
+// 体組成はタブを押したときだけ表示。リロードすると必ずコンディションに戻る（保存しない）
+function showView(view) {
+  const isBody = view === "body";
+  conditionPanel.hidden = isBody;
+  bodyPanel.hidden = !isBody;
+  todayTitle.textContent = isBody ? "体組成" : "今日のコンディション";
+  viewSwitch.querySelectorAll("button").forEach((btn) => {
+    btn.classList.toggle("is-active", btn.dataset.view === view);
+  });
+  if (!isBody) closeBodyForm(); // 体組成から離れたら入力フォームも閉じる
+}
+
+viewSwitch.addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-view]");
+  if (btn) showView(btn.dataset.view);
+});
+
+// --- 入力欄を BODY_METRICS から自動生成（項目を増やしてもHTMLの修正は不要） ---
+for (const [key, m] of Object.entries(BODY_METRICS)) {
+  const label = document.createElement("label");
+  label.className = "body-field";
+  label.innerHTML = `
+    <span>${m.label}${m.unit ? `（${m.unit}）` : ""}</span>
+    <input type="number" name="${key}" step="${m.step}" min="${m.min}" max="${m.max}" inputmode="decimal">
+  `;
+  bodyFields.appendChild(label);
+}
+
+// --- フォームを開く・閉じる ---
+bodyEditBtn.addEventListener("click", () => {
+  bodyForm.hidden = false;
+  bodyEditBtn.hidden = true;
+  bodyMessage.textContent = "";
+  bodyDate.max = todayString(); // 未来の日付は選べない
+  bodyDate.value = todayString();
+  fillBodyForm(); // 今日の記録があれば入れておく
+});
+
+function closeBodyForm() {
+  bodyForm.hidden = true;
+  bodyEditBtn.hidden = false;
+}
+bodyCancelBtn.addEventListener("click", closeBodyForm);
+
+// 日付を変えたら、その日の記録を読み込んで入れておく（修正しやすいように）
+bodyDate.addEventListener("change", fillBodyForm);
+
+async function fillBodyForm() {
+  const date = bodyDate.value || todayString(); // reset() で消える前に日付を覚えておく
+  bodyForm.reset();
+  bodyDate.value = date; // reset() で消えた日付を「すぐに」戻す（読み込みに失敗しても日付は残る）
+  bodyDeleteBtn.hidden = true;
+
+  try {
+    // 🧠 get() で「その日」の値を1回だけ読む（監視は不要なので onValue ではない）
+    const saved = await getBody(currentUid, date);
+    for (const key of Object.keys(BODY_METRICS)) {
+      bodyForm.elements[key].value = saved?.[key] ?? "";
+    }
+    bodyDeleteBtn.hidden = !saved; // 記録がある日だけ「削除」を出す
+  } catch (error) {
+    // ルールで読み取りが拒否されると、ここに来る（PERMISSION_DENIED）
+    console.error(error);
+    bodyMessage.textContent = "この日の記録を読み込めませんでした: " + error.message;
+  }
+}
+
+// --- 保存（Create / Update） ---
+bodyForm.addEventListener("submit", async (e) => {
+  e.preventDefault(); // フォーム送信でページが再読み込みされるのを止める
+  if (!currentUid) return;
+
+  // 🧠 入力された項目だけを集める（空欄は保存しない＝未取得のまま）
+  const values = {};
+  for (const key of Object.keys(BODY_METRICS)) {
+    const input = bodyForm.elements[key];
+    if (input.value !== "") values[key] = Number(input.value);
+  }
+  if (Object.keys(values).length === 0) {
+    bodyMessage.textContent = "1つ以上の項目を入力してください";
+    return;
+  }
+
+  try {
+    await saveBody(currentUid, bodyDate.value, values);
+    bodyMessage.textContent = `${bodyDate.value} の計測値を保存しました`;
+    closeBodyForm(); // 表示は onValue が自動で更新する
+  } catch (error) {
+    console.error(error);
+    bodyMessage.textContent = "保存できませんでした: " + error.message;
+  }
+});
+
+// --- 削除（Delete） ---
+bodyDeleteBtn.addEventListener("click", async () => {
+  if (!confirm(`${bodyDate.value} の体組成の記録を削除しますか？`)) return;
+  try {
+    await deleteBody(currentUid, bodyDate.value);
+    bodyMessage.textContent = `${bodyDate.value} の記録を削除しました`;
+    closeBodyForm();
+  } catch (error) {
+    console.error(error);
+    bodyMessage.textContent = "削除できませんでした: " + error.message;
+  }
+});
+
+// ---------- ⑮ HealthPlanetデータの読み込み・保存 ----------
+const hpSync = document.querySelector("#hp-sync");
+const hpImportInput = document.querySelector("#hp-import-input");
+const hpOutput = document.querySelector("#hp-output");
+
+hpImportInput.addEventListener("change", async () => {
+  const file = hpImportInput.files[0];
+  if (!file || !currentUid) return;
+
+  try {
+    const json = JSON.parse(await file.text());
+
+    // 🧠 HealthPlanetの形 → OGARUの共通の形 に変換
+    const days = convertHealthPlanetExport(json);
+    const count = Object.keys(days).length;
+
+    // 0件でも「連携できた（同期した）」という記録は残す
+    // → 最終同期日時が表示され、連携が成功していることが分かる
+    const question = count === 0
+      ? "計測データはまだありませんが、連携（同期）の記録を保存しますか？"
+      : `${count}日分の体組成データを保存しますか？（同じ日付のHealthPlanet分は上書き、手入力分はそのまま）`;
+    if (!confirm(question)) return;
+
+    await saveHealthPlanetDays(currentUid, days, Date.parse(json.exportedAt));
+    // センシティブなので、ここでは数値を出さず日数だけ伝える
+    hpOutput.textContent = count === 0
+      ? "✅ 連携を記録しました。体組成計で測定すると、次回の取り込みから反映されます"
+      : `✅ ${count}日分の体組成データを保存しました（「体組成」タブで確認できます）`;
+  } catch (error) {
+    console.error(error);
+    hpOutput.textContent = "❌ 読み込めませんでした: " + error.message;
+  } finally {
+    hpImportInput.value = "";
+  }
+});

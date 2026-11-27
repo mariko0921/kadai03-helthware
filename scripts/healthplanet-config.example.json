@@ -1,0 +1,5 @@
+{
+  "_comment": "このファイルをコピーして healthplanet-config.json という名前で保存し、HealthPlanetのアプリ登録で発行された値を入れてください。healthplanet-config.json は .gitignore 済みです。",
+  "client_id": "YOUR_CLIENT_ID",
+  "client_secret": "YOUR_CLIENT_SECRET"
+}

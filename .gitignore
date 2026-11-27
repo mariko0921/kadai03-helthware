@@ -23,3 +23,7 @@ node_modules/
 # --- Firebase設定（GitHubでは非公開。見本は firebase-config.example.js） ---
 js/firebase-config.js
 js/oura-config.js
+
+# --- HealthPlanet の Client Secret（絶対にGitHubに載せない） ---
+scripts/healthplanet-config.json
+scripts/.healthplanet-token.json

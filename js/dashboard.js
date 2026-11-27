@@ -4,6 +4,7 @@
 // =====================================================
 import { METRICS } from "./health.js";
 import { todayString } from "./mood.js";
+import { BODY_METRICS, BODY_SOURCES } from "./body.js";
 
 export const SOURCE_LABELS = {
   oura: "Oura（実データ）",
@@ -193,4 +194,61 @@ export function renderWeekChart(canvas, summaryEl, series, metricKey) {
   chart.options.plugins.tooltip.callbacks.label = (ctx) =>
     `${label}: ${chartFormat(metricKey, ctx.parsed.y)}`;
   chart.update();
+}
+
+// =====================================================
+// 体組成の表示
+// =====================================================
+
+// 数値 → "52.3 kg"（項目ごとの桁数で）
+export function formatBody(key, value) {
+  if (value === undefined || value === null) return "未取得";
+  const m = BODY_METRICS[key];
+  return `${value.toFixed(m.digits)}${m.unit ? " " + m.unit : ""}`;
+}
+
+// list = [最新, 前回]（watchLatestBody から）
+export function renderBody(container, list) {
+  const [latest, previous] = list;
+
+  if (!latest) {
+    container.innerHTML = `
+      <p class="body-empty">まだ記録がありません。<br>
+      体組成計の数値を「計測値を記録」から入力できます。</p>`;
+    return;
+  }
+
+  const d = new Date(latest.date + "T00:00:00");
+  const dateText = d.toLocaleDateString("ja-JP", { month: "numeric", day: "numeric", weekday: "short" });
+
+  const tiles = Object.entries(BODY_METRICS).map(([key, info]) => {
+    const value = latest[key];
+    const missing = value === undefined || value === null;
+
+    // 前回との差（前回にもこの項目があるときだけ）
+    let diff = "";
+    const prev = previous?.[key];
+    if (!missing && prev !== undefined && prev !== null) {
+      const delta = Number((value - prev).toFixed(info.digits));
+      const sign = delta > 0 ? "+" : delta < 0 ? "−" : "±";
+      diff = `<div class="metric-diff">前回比 ${sign}${Math.abs(delta).toFixed(info.digits)}${info.unit}</div>`;
+    }
+
+    return `
+      <div class="metric ${missing ? "is-missing" : ""}">
+        <div class="metric-label">${info.label}</div>
+        <div class="metric-value">${formatBody(key, value)}</div>
+        ${diff}
+      </div>`;
+  }).join("");
+
+  const prevText = previous
+    ? `（前回：${new Date(previous.date + "T00:00:00").toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" })}）`
+    : "";
+
+  container.innerHTML = `
+    <p class="body-head">最終計測：<strong>${dateText}</strong> <span class="muted">${prevText}</span></p>
+    <div class="metric-grid">${tiles}</div>
+    <p class="muted source-line">取得元：${latest.sources.map((s) => BODY_SOURCES[s]).join("＋")}</p>
+  `;
 }

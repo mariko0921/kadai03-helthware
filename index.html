@@ -61,9 +61,37 @@
       <!-- 1. 今日のコンディション -->
       <div class="card">
         <div class="card-head">
-          <h2 class="card-title">今日のコンディション</h2>
+          <h2 id="today-title" class="card-title">今日のコンディション</h2>
         </div>
-        <div id="today-health"></div>
+        <!-- 表示の切り替え（体組成はタブを押したときだけ表示） -->
+        <div id="view-switch" class="source-switch">
+          <button data-view="condition" class="is-active">コンディション</button>
+          <button data-view="body">体組成</button>
+        </div>
+
+        <div id="condition-panel">
+          <div id="today-health"></div>
+        </div>
+
+        <div id="body-panel" hidden>
+          <div id="body-latest"></div>
+          <div class="btn-row">
+            <button id="body-edit-btn" class="btn">計測値を記録</button>
+          </div>
+          <form id="body-form" class="body-form" hidden>
+            <label class="body-date">計測日
+              <input type="date" id="body-date" required>
+            </label>
+            <div id="body-fields" class="body-fields"></div>
+            <p class="muted">入力した項目だけ保存されます（全項目任意）。同じ日付は上書きされます。</p>
+            <div class="btn-row">
+              <button type="submit" class="btn">保存</button>
+              <button type="button" id="body-cancel-btn" class="btn btn-sub">閉じる</button>
+              <button type="button" id="body-delete-btn" class="link-btn danger">この日の記録を削除</button>
+            </div>
+          </form>
+          <p id="body-message" class="mood-message"></p>
+        </div>
       </div>
 
       <!-- 2. 気分のワンタップ記録 -->
@@ -122,6 +150,28 @@
           <p class="muted">Oura APIはブラウザからの直接取得（CORS）を許可していないため、この方式にしています。</p>
         </details>
         <pre id="oura-output" class="oura-output"></pre>
+      </div>
+
+      <!-- 6. HealthPlanet連携 -->
+      <div class="card">
+        <h2 class="card-title">HealthPlanet連携（体組成計）</h2>
+        <p id="hp-sync" class="oura-sync"></p>
+        <div class="btn-row">
+          <label class="btn btn-file">
+            HealthPlanetデータを読み込む
+            <input id="hp-import-input" type="file" accept=".json,application/json" hidden>
+          </label>
+        </div>
+        <details class="howto">
+          <summary>HealthPlanetデータの取り込み方</summary>
+          <ol>
+            <li>ターミナルで <code>python3 scripts/fetch_healthplanet.py</code> を実行</li>
+            <li>（初回・期限切れ時のみ）ブラウザで許可 → 表示されたコードを貼り付け</li>
+            <li>「HealthPlanetデータを読み込む」で <code>exports/healthplanet-export.json</code> を選ぶ</li>
+          </ol>
+          <p class="muted">同じ日に手入力がある場合は、HealthPlanetの値を優先し、体水分率などHealthPlanetに無い項目は手入力で補います。BMIは体重と身長から計算します。</p>
+        </details>
+        <p id="hp-output" class="mood-message"></p>
       </div>
 
     </section>
