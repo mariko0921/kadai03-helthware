@@ -27,6 +27,7 @@ import {
   deleteDemoData,
   watchRecentHealth,
   saveOuraDays,
+  watchConnection,
 } from "./health.js";
 import {
   renderToday,
@@ -44,6 +45,9 @@ let stopWatchingMoods = null;
 
 // 健康データの監視をやめるための関数
 let stopWatchingHealth = null;
+
+// Oura連携状態の監視をやめるための関数
+let stopWatchingConnection = null;
 
 // ---------- 画面の要素を取得 ----------
 const loginView = document.querySelector("#login-view");
@@ -85,6 +89,8 @@ onAuthStateChanged(auth, (user) => {
     stopWatchingMoods = watchRecentMoods(user.uid, renderMoods);
     // 直近7日分の健康データの監視も開始
     stopWatchingHealth = watchRecentHealth(user.uid, 7, onHealthChanged);
+    // Ouraの最終同期日時の監視も開始
+    stopWatchingConnection = watchConnection(user.uid, "oura", renderOuraSync);
   } else {
     // ログアウトしたら監視をやめる
     // （やめないと、権限がないのに読もうとしてエラーになる）
@@ -95,6 +101,10 @@ onAuthStateChanged(auth, (user) => {
     if (stopWatchingHealth) {
       stopWatchingHealth();
       stopWatchingHealth = null;
+    }
+    if (stopWatchingConnection) {
+      stopWatchingConnection();
+      stopWatchingConnection = null;
     }
     loginView.hidden = false;
     appView.hidden = true;
@@ -410,3 +420,32 @@ ouraImportInput.addEventListener("change", async () => {
     ouraImportInput.value = "";
   }
 });
+
+// ---------- ⑫ 最終同期日時の表示（Step 11） ----------
+const ouraSync = document.querySelector("#oura-sync");
+const ONE_DAY = 24 * 60 * 60 * 1000; // 24時間（ミリ秒）
+
+// conn = connections/{uid}/oura の中身（未同期なら null）
+function renderOuraSync(conn) {
+  if (!conn) {
+    ouraSync.textContent = "まだ同期していません";
+    ouraSync.classList.remove("is-stale");
+    return;
+  }
+
+  const fmt = (ms) =>
+    new Date(ms).toLocaleString("ja-JP", {
+      month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit",
+    });
+
+  let text =
+    `最終同期：${fmt(conn.lastSyncAt)}` +
+    `（Ouraから取得：${fmt(conn.dataFetchedAt)}・${conn.rangeStart}〜${conn.rangeEnd} の${conn.dayCount}日分）`;
+
+  // 24時間以上たっていたら注意を出す
+  const isStale = Date.now() - conn.lastSyncAt > ONE_DAY;
+  if (isStale) text = "⚠️ 1日以上同期していません　" + text;
+
+  ouraSync.textContent = text;
+  ouraSync.classList.toggle("is-stale", isStale);
+}

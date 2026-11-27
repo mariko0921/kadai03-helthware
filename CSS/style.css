@@ -206,3 +206,6 @@ body {
 .chart-box.is-empty .chart-empty { display: flex; }
 
 .btn-file { display: inline-block; }
+
+.oura-sync { font-size: 0.8rem; color: var(--muted); margin: 0 0 12px; }
+.oura-sync.is-stale { color: #8a5a12; }

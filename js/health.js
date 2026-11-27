@@ -137,3 +137,13 @@ export async function saveOuraDays(uid, days, exportedAt) {
   await update(ref(db), updates);
   return dates.length;
 }
+
+// ---------- Read：連携状態（最終同期日時など）を監視する ----------
+// 保存場所: connections/{uid}/{source}
+// callback には { lastSyncAt, dataFetchedAt, rangeStart, rangeEnd, dayCount, method } か null が渡される
+export function watchConnection(uid, source, callback) {
+  // query は使わず、1か所をそのまま監視する（中身はオブジェクト1つだけなので）
+  return onValue(ref(db, `connections/${uid}/${source}`), (snapshot) => {
+    callback(snapshot.val()); // まだ1度も同期していなければ null
+  });
+}
