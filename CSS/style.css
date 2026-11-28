@@ -416,14 +416,14 @@ code {
   inset: -6%;
   width: 112%;
   height: 112%;
-  fill: #4d5a33;
-  stroke: #4d5a33;
+  fill: #3d5a2c;   /* 深い森の緑（前回 #4d5a33 のくすんだオリーブ） */
+  stroke: #3d5a2c;
   stroke-linecap: round;
-  opacity: 0.13;
+  opacity: 0.27;   /* 前回 0.2。文字や操作の邪魔にならない範囲で濃く */
   filter: blur(4px); /* 地面に落ちた影のようにぼかす（葉先の尖りが少し分かる程度） */
 }
 .komorebi-leaves path { stroke: none; }
-.komorebi-leaves .twig { fill: none; stroke: #4d5a33; }
+.komorebi-leaves .twig { fill: none; stroke: #3d5a2c; }
 
 .sway { transform-box: view-box; }
 .sway-a { transform-origin: 0 0;       animation: sway-a 14s ease-in-out infinite alternate; }
@@ -545,3 +545,14 @@ code {
 .bowel-btn { padding: 8px 18px; }
 .bowel-row .muted { margin: 0; flex: 1; }
 .cal-mood small { font-size: 0.6rem; margin-left: 1px; }
+
+/* ログイン画面：葉が重なっても文字が読みやすいよう、中央にごく薄い光のにじみを敷く */
+.login { position: relative; }
+.login::before {
+  content: "";
+  position: absolute;
+  inset: 20px -40px;
+  z-index: -1;
+  background: radial-gradient(ellipse 60% 55% at 50% 50%, rgba(240, 233, 218, 0.85), rgba(240, 233, 218, 0) 75%);
+  pointer-events: none;
+}
